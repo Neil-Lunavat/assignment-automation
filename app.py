@@ -18,7 +18,7 @@ load_dotenv()
 # Page configuration
 st.set_page_config(
     page_title="Assignment Automation Tool",
-    page_icon="📚",
+    page_icon="😹",
     layout="wide"
 )
 
@@ -27,7 +27,7 @@ cookie_manager = stx.CookieManager()
 def main():
     """Main function to run the Streamlit application."""
     # Header
-    st.title("📚 Assignment Automation Tool")
+    st.title("😹 Assignment Automation Tool")
     st.markdown("Upload an assignment PDF and get the code solution and writeup automatically.")
     
     if "show_success" not in st.session_state:
