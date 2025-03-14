@@ -27,6 +27,7 @@ class GeminiAPI:
         4.  **Output Display:**  The program must display the output that is returned from these function calls.
         5.  **Code Style:**  Apply necessary comments and adhere to good coding practices.
         6.  **Docstrings:** Include a concise, one-liner docstring for each function to explain its purpose.
+        7.  **Multiple Programs:** If there are multiple programs in a single problem statement, make multiple code snippets for each program.
 
         Furthermore, you need to generate two valid sets of test inputs that are logically consistent with the code. Present these test inputs in this specific format:
         ```
@@ -35,9 +36,10 @@ class GeminiAPI:
         <inputs for test case 2>
         TEST_END
         ```
+        
         Your ENTIRE output MUST be formatted as follows, and contain NOTHING else: 
         ```{assignment_type}
-        [generated python code]
+        [generated code]
         ```
 
         ```
