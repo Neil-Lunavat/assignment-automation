@@ -109,14 +109,14 @@ def main():
                 # Step 3: Execute the code
                 status_text.text("Executing code with test inputs...")
                 code_executor = CodeExecutor(code_response)
-                outputs = code_executor.execute_code(f"C:\\Users\\{student_info["name"]}\\Desktop\\programs")
-                code = code_executor.get_code_content()
+                code, outputs = code_executor.execute_code(f"C:\\Users\\{student_info["name"]}\\Desktop\\programs", assignment_type)
                 progress_bar.progress(70)
                 
                 # Step 4: Generate markdown and PDF
                 status_text.text("Generating markdown and PDF...")
                 markdown_gen = MarkdownGenerator(
                     assignment_number,
+                    assignment_type,
                     student_info["name"],
                     student_info["prn"],
                     student_info["batch"],

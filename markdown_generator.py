@@ -1,7 +1,8 @@
 class MarkdownGenerator:
-    def __init__(self, assignment_number, student_name, student_prn, student_batch, problem_statement, code, outputs):
+    def __init__(self, assignment_number, assignment_type, student_name, student_prn, student_batch, problem_statement, code, outputs):
         """Initialize with all necessary content for generating markdown."""
         self.assignment_number = assignment_number
+        self.assignment_type = assignment_type
         self.student_name = student_name
         self.student_prn = student_prn
         self.student_batch = student_batch
@@ -22,7 +23,7 @@ class MarkdownGenerator:
 {self.problem_statement}
 
 ## Code
-```python
+```{self.assignment_type}
 {self.code}
 ```
 

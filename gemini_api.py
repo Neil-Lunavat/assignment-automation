@@ -36,7 +36,7 @@ class GeminiAPI:
         TEST_END
         ```
         Your ENTIRE output MUST be formatted as follows, and contain NOTHING else: 
-        ```python
+        ```{assignment_type}
         [generated python code]
         ```
 

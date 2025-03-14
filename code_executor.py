@@ -34,51 +34,48 @@ class CodeExecutor:
         
         return filename
     
-    def execute_code(self, cwd):
+    def execute_code(self, cwd, assignment_type):
         """Execute the code with each test input and capture the output."""
-        code_file = self.save_code_to_file()
-        
-        outputs = []
-        for input_data in self.test_inputs:
-            try:
-                # Create a command line style output header
-                result = f"{cwd}> python solution.py\n"
-                
-                # Execute the Python file with the input
-                process = subprocess.Popen(
-                    ["python", code_file],
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-                
-                # Split input_data into lines for handling multi-line inputs
-                stdin_data = input_data
-                
-                stdout, stderr = process.communicate(input=stdin_data, timeout=10)
-                
-                if stderr:
-                    # Handle error case
-                    result += f"{stderr}"
-                else:
-                    stdout = stdout.strip('\n').split(': ')
-                    input_index = 0
-                    for line in stdout:
-                        if "Enter" in line:
-                            result += line + ": " + input_data + "\n"
-                            input_index += 1
-                    result += ': '.join(stdout[input_index:])
-                
-                outputs.append(result)
-                
-            except subprocess.TimeoutExpired:
-                outputs.append(f"{cwd}> python solution.py\nExecution timed out after 10 seconds")
-            except Exception as e:
-                outputs.append(f"{cwd}> python solution.py\nError: {str(e)}")
+        if assignment_type == "python":
+            code_file = self.save_code_to_file()
+            
+            outputs = []
+            for input_data in self.test_inputs:
+                try:
+                    # Create a command line style output header
+                    result = f"{cwd}> python solution.py\n"
+                    
+                    # Execute the Python file with the input
+                    process = subprocess.Popen(
+                        ["python", code_file],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    
+                    # Split input_data into lines for handling multi-line inputs
+                    stdin_data = input_data
+                    
+                    stdout, stderr = process.communicate(input=stdin_data, timeout=10)
+                    
+                    if stderr:
+                        # Handle error case
+                        result += f"{stderr}"
+                    else:
+                        stdout = stdout.strip('\n').split(': ')
+                        input_index = 0
+                        for line in stdout:
+                            if "Enter" in line:
+                                result += line + ": " + input_data + "\n"
+                                input_index += 1
+                        result += ': '.join(stdout[input_index:])
+                    
+                    outputs.append(result)
+                    
+                except subprocess.TimeoutExpired:
+                    outputs.append(f"{cwd}> python solution.py\nExecution timed out after 10 seconds")
+                except Exception as e:
+                    outputs.append(f"{cwd}> python solution.py\nError: {str(e)}")
 
-        return outputs
-    
-    def get_code_content(self):
-        """Return the extracted Python code."""
-        return self.code
+            return self.code, outputs
