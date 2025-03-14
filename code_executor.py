@@ -5,46 +5,45 @@ import tempfile
 import platform
 
 class CodeExecutor:
-    def __init__(self, code_content, test_inputs):
+    def __init__(self, code_content):
         """Initialize with the code content and test inputs."""
-        self.code_content = code_content
-        self.test_inputs = test_inputs
+        self.code, self.test_inputs = self._extract_code_and_inputs(code_content)
         self.temp_dir = tempfile.mkdtemp()
-        self.output_results = []
     
-    def _extract_code_and_inputs(self):
+    def _extract_code_and_inputs(self, code_content):
         """Extract Python code and test inputs from the Gemini API response."""
         # Extract Python code
         python_code_pattern = r"```python\s+(.*?)\s+```"
-        code_match = re.search(python_code_pattern, self.code_content, re.DOTALL)
-        code = code_match.group(1) if code_match else self.code_content
+        code_match = re.search(python_code_pattern, code_content, re.DOTALL)
+        code = code_match.group(1) if code_match else code_content
         
         # Extract test inputs
         test_inputs_pattern = r"TEST_START\s+(.*?)\s+TEST_END"
-        inputs_match = re.search(test_inputs_pattern, self.test_inputs, re.DOTALL)
+        inputs_match = re.search(test_inputs_pattern, code_content, re.DOTALL)
         inputs = inputs_match.group(1).strip().split('\n') if inputs_match else []
         
         return code, inputs
     
     def save_code_to_file(self):
         """Save the extracted code to a temporary Python file."""
-        code, _ = self._extract_code_and_inputs()
         
         # Save the code to a temporary file
         filename = os.path.join(self.temp_dir, "solution.py")
         with open(filename, "w") as f:
-            f.write(code)
+            f.write(self.code)
         
         return filename
     
     def execute_code(self, cwd):
         """Execute the code with each test input and capture the output."""
         code_file = self.save_code_to_file()
-        _, inputs = self._extract_code_and_inputs()
         
         outputs = []
-        for input_data in inputs:
+        for input_data in self.test_inputs:
             try:
+                # Create a command line style output header
+                result = f"{cwd}> python solution.py\n"
+                
                 # Execute the Python file with the input
                 process = subprocess.Popen(
                     ["python", code_file],
@@ -54,24 +53,32 @@ class CodeExecutor:
                     text=True
                 )
                 
-                stdout, stderr = process.communicate(input=input_data, timeout=10)
+                # Split input_data into lines for handling multi-line inputs
+                stdin_data = input_data
+                
+                stdout, stderr = process.communicate(input=stdin_data, timeout=10)
                 
                 if stderr:
-                    result = f"{cwd}> python solution.py\n>> {input_data}\n{stderr}"
+                    # Handle error case
+                    result += f"{stderr}"
                 else:
-                    result = f"{cwd}> python solution.py\n>> {input_data}\n{stdout}"
+                    stdout = stdout.strip('\n').split(': ')
+                    input_index = 0
+                    for line in stdout:
+                        if "Enter" in line:
+                            result += line + ": " + input_data + "\n"
+                            input_index += 1
+                    result += ': '.join(stdout[input_index:])
                 
                 outputs.append(result)
                 
             except subprocess.TimeoutExpired:
-                outputs.append(f"{cwd}> python solution.py\n>> {input_data}\nExecution timed out after 10 seconds")
+                outputs.append(f"{cwd}> python solution.py\nExecution timed out after 10 seconds")
             except Exception as e:
-                outputs.append(f"{cwd}> python solution.py\n>> {input_data}\nError: {str(e)}")
-        
-        self.output_results = outputs
+                outputs.append(f"{cwd}> python solution.py\nError: {str(e)}")
+
         return outputs
     
     def get_code_content(self):
         """Return the extracted Python code."""
-        code, _ = self._extract_code_and_inputs()
-        return code
+        return self.code

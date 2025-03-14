@@ -14,12 +14,12 @@ class GeminiAPI:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
     
-    def generate_code(self, problem_statement):
+    def generate_code(self, problem_statement, assignment_type):
         """Generate code solution based on the problem statement."""
-        prompt = """
-        Please generate a Python program to solve the following problem statement: '{problem_statement}'.
+        prompt = f"""
+        Please generate a {assignment_type} program to solve the following problem statement: '{problem_statement}'.
 
-        The Python program MUST meet these requirements:
+        The {assignment_type} program MUST meet these requirements:
 
         1.  **Input Handling:**  It must include an input prompt to receive multiple numerical inputs on a single line, for example, like this: '12 48 32'.  It MUST use `.split()` and then `int()` with multiple assignment to convert these inputs into respective variables.
         2.  **String Input Compatibility:** If the problem statement involves string inputs, the program should handle them appropriately.
@@ -37,11 +37,11 @@ class GeminiAPI:
         ```
         Your ENTIRE output MUST be formatted as follows, and contain NOTHING else: 
         ```python
-        {generated python code}
+        [generated python code]
         ```
 
         ```
-        {generated test inputs}
+        [generated test inputs]
         ```
         Ensure there is NO extra text, no introductory phrases, and that the test inputs are logically valid based on the code you generate.  The test inputs should be designed to properly test the functionality of the generated Python code.
         """
@@ -49,13 +49,14 @@ class GeminiAPI:
         response = self.model.generate_content(prompt)
         return response.text
     
-    def generate_writeup(self, theory_points, assignment_number="", problem_statement=""):
+    def generate_writeup(self, theory_points, code_response, assignment_number="", problem_statement="", assignment_type="python"):
         """Generate a theoretical writeup based on the provided theory points."""
         theory = "\n".join([f"- {point}" for point in theory_points])
         
         prompt = f"""
-        Create a comprehensive write-up for Assignment {assignment_number} using this format:
+        Create a comprehensive write-up for this {assignment_type} Assignment using this format:
         
+        ```markdown
         # Assignment No {assignment_number}
 
         ## Title: 
@@ -65,10 +66,7 @@ class GeminiAPI:
         {problem_statement}
 
         ## Objective: 
-        To make students familiar with the use of control flow tools in Python.
-
-        ## Outcome: 
-        Use control flow statements to implement logic in programs.
+        [Extrapolate from theory and problem statement]
 
         ## Theory:
 
@@ -77,21 +75,26 @@ class GeminiAPI:
         
         Create detailed sections with the following characteristics:
         
-        1. Start each section with a heading (e.g., "### How to generate Fibonacci series")
+        1. Start each section with a heading of the point (e.g., "### How to generate Fibonacci series")
         2. Provide a clear conceptual explanation with examples and mathematical calculations where relevant
         3. Include fundamental understanding, followed by deeper insights
         4. For programming concepts, include practical examples with code snippets
         5. Explain mathematical properties and formulas where applicable
-        6. Discuss real-world applications
         7. Cover optimization techniques and best practices
         
         ## Algorithm:
-        Provide a step-by-step algorithm for solving the problem in the assignment.
-
+        Provide a step-by-step algorithm that matches the following program:
+        {code_response}
+        
         ## Conclusion:
-        Write a reflection on what was learned from implementing this assignment, focusing on the understanding of control flow tools and their application.
+        Summarize and write a conclusion on what was learned from implementing this assignment.
+        Keep it concise and formal, only upto a paragraph.
+        ```
 
-        The write-up should be comprehensive, educational, and formatted in Markdown. Ensure it's detailed enough for 4-5 pages while maintaining academic rigor and clarity.
+        Strictly follow this format and only output the markdown, nothing else.
+        Ensure there is NO extra text, no introductory phrases.
+        The write-up should be basic to intermeddiate level up to a first year B.Tech. Student's level, and formatted as stated.
+        Ensure it's detailed enough for 4-5 pages with information that's not too dense.
         """
         
         response = self.model.generate_content(prompt)

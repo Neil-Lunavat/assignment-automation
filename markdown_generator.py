@@ -54,9 +54,21 @@ class WriteupFormatter:
     
     def format_content(self):
         """Format the writeup content ensuring proper markdown structure."""
-        # This is a simple formatter that could be expanded for more complex formatting
-        # Currently, we assume the content from Gemini is already well-formatted markdown
-        return self.writeup_content
+        text = self.writeup_content
+        start_marker = "```markdown"
+        end_marker = "```"
+        # Find the index of the first occurrence
+        start_index = text.find(start_marker)
+        if start_index == -1:
+            return text  # No marker found
+        
+        # Find the last occurrence after our starting point
+        end_index = text.rfind(end_marker)
+        if end_index == -1:
+            return text  # No ending marker found
+        
+        # Extract the content between markers
+        return text[start_index+11:end_index]
     
     def save_writeup_to_file(self, filename):
         """Save the formatted writeup to a file."""
