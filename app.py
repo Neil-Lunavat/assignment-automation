@@ -79,7 +79,7 @@ def main():
                 status_text = st.empty()
                 
                 # Step 1: Parse the PDF
-                status_text.text("Extracting problem statement and theory points...")
+                status_text.text("Extracting problem statement and theory points using Gemini...")
                 pdf_parser = PDFParser(pdf_path)
                 problem_statement = pdf_parser.extract_problem_statement()
                 theory_points = pdf_parser.extract_theory_points()
@@ -97,12 +97,12 @@ def main():
                         st.write(f"- {point}")
                 
                 # Step 2: Use Gemini API to generate code and writeup
-                status_text.text("Generating code solution...")
+                status_text.text("Generating code solution using Gemini...")
                 gemini = GeminiAPI()
                 code_response = gemini.generate_code(problem_statement, assignment_type)
                 progress_bar.progress(40)
                 
-                status_text.text("Generating theoretical writeup...")
+                status_text.text("Generating theoretical writeup using Gemini...")
                 writeup_response = gemini.generate_writeup(theory_points, code_response, assignment_number, problem_statement, assignment_type)
                 progress_bar.progress(60)
                 
@@ -113,7 +113,7 @@ def main():
                 progress_bar.progress(70)
                 
                 # Step 4: Generate markdown and PDF
-                status_text.text("Generating markdown and PDF...")
+                status_text.text("Generating markdown and PDF using md-to-pdf API...")
                 markdown_gen = MarkdownGenerator(
                     assignment_number,
                     assignment_type,
