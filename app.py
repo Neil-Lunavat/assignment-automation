@@ -32,6 +32,10 @@ def main():
     
     if "show_success" not in st.session_state:
         st.session_state.show_success = False
+    
+    # Initialize processing_complete in session state if it doesn't exist
+    if "processing_complete" not in st.session_state:
+        st.session_state.processing_complete = False
 
     stored_info = cookie_manager.get("student_info")
     if not stored_info:
@@ -41,7 +45,7 @@ def main():
             "batch": ""
         }
     
-   # Create the sidebar inputs with stored values as defaults
+    # Create the sidebar inputs with stored values as defaults
     st.sidebar.header("Student Information")
     student_info = {
         "name": st.sidebar.text_input("Name", stored_info["name"]),
@@ -109,9 +113,8 @@ def main():
                 # Step 3: Execute the code
                 status_text.text("Executing code with test inputs...")
                 code_executor = CodeExecutor(code_response, assignment_type)
-                code, outputs = code_executor.execute_code(f"C:\\Users\\{student_info["name"]}\\Desktop\\programs", assignment_type)
+                code, outputs = code_executor.execute_code(f"C:\\Users\\{student_info['name']}\\Desktop\\programs", assignment_type)
                 progress_bar.progress(70)
-
 
                 # Step 4: Generate markdown and PDF
                 status_text.text("Generating markdown and PDF using md-to-pdf API...")
@@ -126,7 +129,7 @@ def main():
                     outputs
                 )
                 
-                filename = f"{student_info["prn"]}_{student_info["name"].split(' ')[0]}_{student_info["batch"]}.pdf"
+                filename = f"{student_info['prn']}_{student_info['name'].split(' ')[0]}_{student_info['batch']}.pdf"
 
                 # Save markdown to temporary file
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.md') as tmp_md:
@@ -134,7 +137,6 @@ def main():
                     tmp_md.write(upload_pdf_content.encode())
                     markdown_path = tmp_md.name
                 
-
                 # Convert markdown to PDF
                 md_to_pdf = MarkdownToPDF()
                 pdf_output_path = os.path.join(tempfile.gettempdir(), filename)
@@ -150,44 +152,51 @@ def main():
                     progress_bar.progress(100)
                     status_text.text("Processing complete!")
                     
-                    # Display results
-                    st.header("Results")
+                    # Save results to session state so they persist between re-renders
+                    st.session_state.processing_complete = True
+                    st.session_state.formatted_writeup = formatted_writeup
+                    st.session_state.pdf_content = pdf_content
+                    st.session_state.upload_pdf_content = upload_pdf_content
+                    st.session_state.assignment_number = assignment_number
+                    st.session_state.filename = filename
                     
-                    # Create tabs for different outputs
-                    tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
+                    # Clean up temporary files
+                    try:
+                        os.unlink(pdf_path)
+                        os.unlink(markdown_path)
+                        os.unlink(pdf_output_path)
+                    except:
+                        pass
                     
-                    with tab1:
-                        # Add a download link for the writeup
-                        st.download_button(
-                            label="Download Writeup as Text",
-                            data=formatted_writeup,
-                            file_name=f"Assignment_{assignment_number}_Writeup.txt",
-                            mime="text/plain"
-                        )
-
-                        st.markdown(formatted_writeup)
-                    
-                    with tab2:
-                        st.download_button(
-                            label="Download PDF",
-                            data=pdf_content,
-                            file_name=filename,
-                            mime="application/pdf"
-                        )                
-
-                        st.markdown(upload_pdf_content)
-                        
                 except Exception as e:
                     st.error(f"Error generating PDF: {str(e)}")
-                    
-                # Clean up temporary files
-                try:
-                    os.unlink(pdf_path)
-                    os.unlink(markdown_path)
-                    os.unlink(pdf_output_path)
-                except:
-                    pass
-    
+
+        if st.session_state.processing_complete:
+            # Create tabs outside the button click handler so they persist
+            tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
+                  
+            # Display content in tabs based on session state
+            with tab1:
+                # Still keep the download option
+                st.download_button(
+                    label="Download Writeup as Text",
+                    data=st.session_state.formatted_writeup,
+                    file_name=f"Assignment_{st.session_state.assignment_number}_Writeup.txt",
+                    mime="text/plain"
+                )
+                
+                # Display the writeup
+                st.markdown(st.session_state.formatted_writeup)
+            
+            with tab2:
+                st.download_button(
+                    label="Download PDF",
+                    data=st.session_state.pdf_content,
+                    file_name=st.session_state.filename,
+                    mime="application/pdf"
+                )
+                st.markdown(st.session_state.upload_pdf_content)
+        
     # Footer
     st.markdown("---")
     st.markdown("© 2025 Assignment Automation Tool | Made by [Neil](https://www.linkedin.com/in/neil-lunavat) with ❤️")

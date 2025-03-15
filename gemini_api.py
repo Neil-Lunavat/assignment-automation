@@ -55,6 +55,7 @@ class GeminiAPI:
         [generated test inputs for code 2]
         ```
 
+        ENSURE YOU HAVE GENERATED SEPARATE PROGRAMS FOR SEPARATE PROBLEM STATEMENTS. 
         Ensure your response contains only the code and test inputs - no explanations or extra text.
         Test inputs must be practical examples that effectively test your code's functionality.
         For problems requiring multiple programs, provide separate code and test inputs for each.
