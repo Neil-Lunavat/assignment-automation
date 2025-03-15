@@ -21,31 +21,46 @@ class GeminiAPI:
 
         The {assignment_type} program MUST meet these requirements:
 
-        1.  **Input Handling:**  It must include an input prompt to receive multiple numerical inputs on a single line, for example, like this: '12 48 32'.  It MUST use `.split()` and then `int()` with multiple assignment to convert these inputs into respective variables.
+        1.  **Input Handling:**  It must include an input prompt to receive multiple numerical inputs on a single line, for example, like this: '12 48 32'.  (It MUST use `.split()` and then `int()` with multiple assignment to convert these inputs into respective variables for python) (For C++ only one input prompt to user is enough because it can accept input with spaces normally)
         2.  **String Input Compatibility:** If the problem statement involves string inputs, the program should handle them appropriately.
         3.  **Problem Solving Functions:**  The program must call functions that directly address and solve the problem described in the problem statement.
         4.  **Output Display:**  The program must display the output that is returned from these function calls.
         5.  **Code Style:**  Apply necessary comments and adhere to good coding practices.
         6.  **Docstrings:** Include a concise, one-liner docstring for each function to explain its purpose.
-        7.  **Multiple Programs:** If there are multiple programs in a single problem statement, make multiple code snippets for each program.
+        7.  **Multiple Programs:** If there are multiple programs in a single problem statement, make multiple code snippets for each program. All programs should come first, then the respective test inputs in their own code blocks.
 
         Furthermore, you need to generate two valid sets of test inputs that are logically consistent with the code. Present these test inputs in this specific format:
         ```
         TEST_START
         <inputs for test case 1>
+
         <inputs for test case 2>
         TEST_END
         ```
+        There must be a newline between each test case.
         
         Your ENTIRE output MUST be formatted as follows, and contain NOTHING else: 
         ```{assignment_type}
-        [generated code]
+        [generated code 1]
+        ```
+        ```{assignment_type}
+        [generated code 2]
         ```
 
         ```
-        [generated test inputs]
+        [generated test inputs for code 1]
         ```
-        Ensure there is NO extra text, no introductory phrases, and that the test inputs are logically valid based on the code you generate.  The test inputs should be designed to properly test the functionality of the generated Python code.
+
+        ```
+        [generated test inputs for code 2]
+        ```
+
+        Ensure your response contains only the code and test inputs - no explanations or extra text.
+        Test inputs must be practical examples that effectively test your code's functionality.
+        For problems requiring multiple programs, provide separate code and test inputs for each.
+        Keep the code at a first-year undergraduate level - accept user inputs but avoid advanced libraries and complex approaches.
+        Use only basic libraries (iostream for C++ is acceptable). Prefer simple procedural solutions without classes.
+        DO NOT USE VECTOR OR ALGORITHM HEADERS.
         """
         
         response = self.model.generate_content(prompt)
@@ -85,7 +100,7 @@ class GeminiAPI:
         7. Cover optimization techniques and best practices
         
         ## Algorithm:
-        Provide a step-by-step algorithm that matches the following program:
+        Provide a step-by-step algorithm that matches the following program(s):
         {code_response}
         
         ## Conclusion:
