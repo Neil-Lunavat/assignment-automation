@@ -119,11 +119,12 @@ class CodeExecutor:
                                 # Handle error case
                                 result += f"{stderr}"
                             else:
+                                input_data = input_data.split('\n')
                                 stdout = stdout.strip('\n').split(': ')
                                 input_index = 0
                                 for line in stdout:
                                     if "Enter" in line:
-                                        result += line + ": " + input_data + "\n"
+                                        result += line + ": " + input_data[input_index] + "\n"
                                         input_index += 1
                                 result += ': '.join(stdout[input_index:])
                             
@@ -162,11 +163,12 @@ class CodeExecutor:
                             # Handle error case
                             result += f"{stderr}"
                         else:
+                            input_data = input_data.split('\n')
                             stdout = stdout.strip('\n').split(': ')
                             input_index = 0
                             for line in stdout:
                                 if "Enter" in line:
-                                    result += line + ": " + input_data + "\n"
+                                    result += line + ": " + input_data[input_index] + "\n"
                                     input_index += 1
                             result += ': '.join(stdout[input_index:])
                         

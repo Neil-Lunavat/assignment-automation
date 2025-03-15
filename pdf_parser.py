@@ -73,22 +73,22 @@ class PDFParser:
                 parsed_data = json.loads(json_match.group(1))
                 
                 # Set the class properties
-                self.assignment_type = parsed_data.get("assignment_type", "unknown")
-                self.assignment_number = parsed_data.get("assignment_number", "Unknown")
+                self.assignment_type = parsed_data.get("assignment_type", "python")
+                self.assignment_number = parsed_data.get("assignment_number", "")
                 self._problem_statement = parsed_data.get("problem_statement", "Could not extract problem statement")
                 self._theory_points = parsed_data.get("theory_points", ["Could not extract theory points"])
             else:
                 # Fallback to defaults if JSON parsing fails
-                self.assignment_type = "unknown"
-                self.assignment_number = "Unknown"
+                self.assignment_type = "python"
+                self.assignment_number = ""
                 self._problem_statement = "Could not extract problem statement"
                 self._theory_points = ["Could not extract theory points"]
                 
         except Exception as e:
             print(f"Error parsing with Gemini: {str(e)}")
             # Set default values if Gemini API fails
-            self.assignment_type = "unknown"
-            self.assignment_number = "Unknown"
+            self.assignment_type = "python"
+            self.assignment_number = ""
             self._problem_statement = "Could not extract problem statement"
             self._theory_points = ["Could not extract theory points"]
             
@@ -102,4 +102,4 @@ class PDFParser:
     
     def extract_assignment_number(self):
         """Return the extracted assignment number."""
-        return self.assignment_number
+        return self.assignment_number if self.assignment_number != "Unknown" else ""

@@ -30,7 +30,10 @@ class MarkdownGenerator:
 - **Batch:** {self.student_batch}
 
 ## Problem Statement
+
+```
 {self.problem_statement}
+```
 
 """
         

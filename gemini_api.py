@@ -67,6 +67,12 @@ class GeminiAPI:
         return response.text
     
     def generate_writeup(self, theory_points, code_response, assignment_number="", problem_statement="", assignment_type="python"):
+        if not theory_points:
+            return """
+            ```markdown
+            ## No write up found for this one...
+            ```
+            """
         """Generate a theoretical writeup based on the provided theory points."""
         theory = "\n".join([f"- {point}" for point in theory_points])
         
