@@ -127,3 +127,7 @@ Don't worry - your code runs in an isolated environment. We're not stealing your
 
 <p align="center">Made with caffeine and spite for all the assignments that robbed us of sleep. May future generations suffer less.</p>
 <p align="center">mwah</p>
+
+## 👨‍💻 About the Developer
+
+This project was built by Neil Lunavat with ❣️. Connect with me on [LinkedIn](https://www.linkedin.com/in/neil-lunavat).
