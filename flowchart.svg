@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f9fafb" rx="10" ry="10"/>
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="Comic Sans MS, cursive" font-size="24" text-anchor="middle" fill="#4169E1" font-weight="bold">Assignment Automation Flow</text>
+  
+  <!-- Box 1 -->
+  <rect x="150" y="80" width="500" height="60" rx="15" ry="15" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+  <text x="400" y="118" font-family="Comic Sans MS, cursive" font-size="18" text-anchor="middle" fill="white">1. Extract problem statement and theory points</text>
+  <circle cx="170" cy="110" r="15" fill="white" opacity="0.9"/>
+  <text x="170" y="116" font-family="Arial" font-size="16" text-anchor="middle" fill="#8b5cf6" font-weight="bold">1</text>
+  
+  <!-- Arrow 1 -->
+  <path d="M400 140 L400 170" stroke="#6b7280" stroke-width="3" fill="none" stroke-dasharray="0"/>
+  <polygon points="400,180 395,170 405,170" fill="#6b7280"/>
+  
+  <!-- Box 2 -->
+  <rect x="150" y="180" width="500" height="60" rx="15" ry="15" fill="#10b981" stroke="#059669" stroke-width="2"/>
+  <text x="400" y="218" font-family="Comic Sans MS, cursive" font-size="18" text-anchor="middle" fill="white">2. Generate code solutions</text>
+  <circle cx="170" cy="210" r="15" fill="white" opacity="0.9"/>
+  <text x="170" y="216" font-family="Arial" font-size="16" text-anchor="middle" fill="#10b981" font-weight="bold">2</text>
+  
+  <!-- Arrow 2 -->
+  <path d="M400 240 L400 270" stroke="#6b7280" stroke-width="3" fill="none" stroke-dasharray="0"/>
+  <polygon points="400,280 395,270 405,270" fill="#6b7280"/>
+  
+  <!-- Box 3 -->
+  <rect x="150" y="280" width="500" height="60" rx="15" ry="15" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+  <text x="400" y="318" font-family="Comic Sans MS, cursive" font-size="18" text-anchor="middle" fill="white">3. Execute code with test inputs</text>
+  <circle cx="170" cy="310" r="15" fill="white" opacity="0.9"/>
+  <text x="170" y="316" font-family="Arial" font-size="16" text-anchor="middle" fill="#f97316" font-weight="bold">3</text>
+  
+  <!-- Arrow 3 -->
+  <path d="M400 340 L400 370" stroke="#6b7280" stroke-width="3" fill="none" stroke-dasharray="0"/>
+  <polygon points="400,380 395,370 405,370" fill="#6b7280"/>
+  
+  <!-- Box 4 -->
+  <rect x="150" y="380" width="500" height="60" rx="15" ry="15" fill="#ec4899" stroke="#db2777" stroke-width="2"/>
+  <text x="400" y="418" font-family="Comic Sans MS, cursive" font-size="18" text-anchor="middle" fill="white">4. Create theoretical writeup</text>
+  <circle cx="170" cy="410" r="15" fill="white" opacity="0.9"/>
+  <text x="170" y="416" font-family="Arial" font-size="16" text-anchor="middle" fill="#ec4899" font-weight="bold">4</text>
+  
+  <!-- Arrow 4 -->
+  <path d="M400 440 L400 470" stroke="#6b7280" stroke-width="3" fill="none" stroke-dasharray="0"/>
+  <polygon points="400,480 395,470 405,470" fill="#6b7280"/>
+  
+  <!-- Box 5 -->
+  <rect x="150" y="480" width="500" height="60" rx="15" ry="15" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+  <text x="400" y="518" font-family="Comic Sans MS, cursive" font-size="18" text-anchor="middle" fill="white">5. Generate formatted PDF</text>
+  <circle cx="170" cy="510" r="15" fill="white" opacity="0.9"/>
+  <text x="170" y="516" font-family="Arial" font-size="16" text-anchor="middle" fill="#3b82f6" font-weight="bold">5</text>
+  
+  <!-- Decorative elements -->
+  <circle cx="50" cy="50" r="20" fill="#8b5cf6" opacity="0.3"/>
+  <circle cx="750" cy="450" r="25" fill="#10b981" opacity="0.3"/>
+  <circle cx="100" cy="400" r="15" fill="#f97316" opacity="0.3"/>
+  <circle cx="700" cy="100" r="18" fill="#ec4899" opacity="0.3"/>
+  <circle cx="70" cy="200" r="22" fill="#3b82f6" opacity="0.3"/>
+  <circle cx="720" cy="520" r="16" fill="#8b5cf6" opacity="0.3"/>
+  <circle cx="60" cy="550" r="23" fill="#ec4899" opacity="0.3"/>
+</svg>
