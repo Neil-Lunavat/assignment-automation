@@ -11,7 +11,17 @@ class MarkdownGenerator:
         self.outputs = outputs
     
     def generate_upload_markdown(self):
-        """Generate markdown for the upload PDF."""
+        """Generate markdown for the upload PDF.
+        
+        Handles both single program case and multiple program case.
+        For single program:
+            - code is a single string
+            - outputs is a list of strings (one per test case)
+        For multiple programs:
+            - code is a list of strings [code1, code2, ...]
+            - outputs is a nested list [[test1_1, test1_2], [test2_1, test2_2], ...]
+        """
+        # Common header for both cases
         markdown = f"""# Assignment {self.assignment_number}
 
 ## Student Details
@@ -22,6 +32,32 @@ class MarkdownGenerator:
 ## Problem Statement
 {self.problem_statement}
 
+"""
+        
+        # Check if we have multiple programs or a single one
+        if isinstance(self.code, list):
+            # Multiple programs case
+            for program_idx, (program_code, program_outputs) in enumerate(zip(self.code, self.outputs), 1):
+                # Add program header and code
+                markdown += f"""
+## Program {program_idx}
+```{self.assignment_type}
+{program_code}
+```
+
+### Program {program_idx} Output
+"""
+                # Add test cases for this program
+                for test_idx, test_output in enumerate(program_outputs, 1):
+                    markdown += f"""
+#### Test Case {test_idx}
+```
+{test_output}
+```
+"""
+        else:
+            # Single program case - original implementation
+            markdown += f"""
 ## Code
 ```{self.assignment_type}
 {self.code}
@@ -29,9 +65,8 @@ class MarkdownGenerator:
 
 ## Output
 """
-        
-        for i, output in enumerate(self.outputs, 1):
-            markdown += f"""
+            for i, output in enumerate(self.outputs, 1):
+                markdown += f"""
 ### Test Case {i}
 ```
 {output}

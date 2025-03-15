@@ -103,7 +103,7 @@ def main():
                 progress_bar.progress(40)
                 
                 status_text.text("Generating theoretical writeup using Gemini...")
-                # writeup_response = gemini.generate_writeup(theory_points, code_response, assignment_number, problem_statement, assignment_type)
+                writeup_response = gemini.generate_writeup(theory_points, code_response, assignment_number, problem_statement, assignment_type)
                 progress_bar.progress(60)
                 
                 # Step 3: Execute the code
@@ -128,64 +128,65 @@ def main():
                 
                 filename = f"{student_info["prn"]}_{student_info["name"].split(' ')[0]}_{student_info["batch"]}.pdf"
 
-                # # Save markdown to temporary file
-                # with tempfile.NamedTemporaryFile(delete=False, suffix='.md') as tmp_md:
-                #     upload_pdf_content = markdown_gen.generate_upload_markdown()
-                #     tmp_md.write(upload_pdf_content.encode())
-                #     markdown_path = tmp_md.name
+                # Save markdown to temporary file
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.md') as tmp_md:
+                    upload_pdf_content = markdown_gen.generate_upload_markdown()
+                    tmp_md.write(upload_pdf_content.encode())
+                    markdown_path = tmp_md.name
                 
-                # # Convert markdown to PDF
-                # md_to_pdf = MarkdownToPDF()
-                # pdf_output_path = os.path.join(tempfile.gettempdir(), filename)
-                # try:
-                #     md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
-                #     with open(pdf_output_path, "rb") as pdf_file:
-                #         pdf_content = pdf_file.read()
-                    
-                #     # Format the writeup
-                #     writeup_formatter = WriteupFormatter(writeup_response)
-                #     formatted_writeup = writeup_formatter.format_content()
-                    
-                #     progress_bar.progress(100)
-                #     status_text.text("Processing complete!")
-                    
-                #     # Display results
-                #     st.header("Results")
-                    
-                #     # Create tabs for different outputs
-                #     tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
-                    
-                #     with tab1:
-                #         # Add a download link for the writeup
-                #         st.download_button(
-                #             label="Download Writeup as Text",
-                #             data=formatted_writeup,
-                #             file_name=f"Assignment_{assignment_number}_Writeup.txt",
-                #             mime="text/plain"
-                #         )
 
-                #         st.markdown(formatted_writeup)
+                # Convert markdown to PDF
+                md_to_pdf = MarkdownToPDF()
+                pdf_output_path = os.path.join(tempfile.gettempdir(), filename)
+                try:
+                    md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
+                    with open(pdf_output_path, "rb") as pdf_file:
+                        pdf_content = pdf_file.read()
                     
-                #     with tab2:
-                #         st.download_button(
-                #             label="Download PDF",
-                #             data=pdf_content,
-                #             file_name=filename,
-                #             mime="application/pdf"
-                #         )                
+                    # Format the writeup
+                    writeup_formatter = WriteupFormatter(writeup_response)
+                    formatted_writeup = writeup_formatter.format_content()
+                    
+                    progress_bar.progress(100)
+                    status_text.text("Processing complete!")
+                    
+                    # Display results
+                    st.header("Results")
+                    
+                    # Create tabs for different outputs
+                    tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
+                    
+                    with tab1:
+                        # Add a download link for the writeup
+                        st.download_button(
+                            label="Download Writeup as Text",
+                            data=formatted_writeup,
+                            file_name=f"Assignment_{assignment_number}_Writeup.txt",
+                            mime="text/plain"
+                        )
 
-                #         st.markdown(upload_pdf_content)
+                        st.markdown(formatted_writeup)
+                    
+                    with tab2:
+                        st.download_button(
+                            label="Download PDF",
+                            data=pdf_content,
+                            file_name=filename,
+                            mime="application/pdf"
+                        )                
+
+                        st.markdown(upload_pdf_content)
                         
-                # except Exception as e:
-                #     st.error(f"Error generating PDF: {str(e)}")
+                except Exception as e:
+                    st.error(f"Error generating PDF: {str(e)}")
                     
-                # # Clean up temporary files
-                # try:
-                #     os.unlink(pdf_path)
-                #     os.unlink(markdown_path)
-                #     os.unlink(pdf_output_path)
-                # except:
-                #     pass
+                # Clean up temporary files
+                try:
+                    os.unlink(pdf_path)
+                    os.unlink(markdown_path)
+                    os.unlink(pdf_output_path)
+                except:
+                    pass
     
     # Footer
     st.markdown("---")
