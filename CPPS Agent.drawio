@@ -1,0 +1,157 @@
+<mxfile host="65bd71144e">
+    <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+        <mxGraphModel dx="2298" dy="1293" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-0"/>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0"/>
+                <mxCell id="2" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-3" target="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="723" y="180"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="7" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-3" target="6" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="923" y="180"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-3" value="Extract the problem statement and theory points" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="700" y="150" width="260" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="29" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="dzsg26OT-IGZxewS5xCa-5" target="28" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dzsg26OT-IGZxewS5xCa-5" value="Extract the code inside ```python``` and create .py file for it. Extract the test inputs inside TEST_START and TEST_END as it is and store in input list." style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="122.50999999999999" y="780" width="340" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="dzsg26OT-IGZxewS5xCa-6" target="32" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dzsg26OT-IGZxewS5xCa-6" value="&lt;span style=&quot;background-color: transparent;&quot;&gt;Run code with the test inputs using subprocess library in python.&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;Capture the output and make a neatly formatted output string that looks like&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;a simulation of CLI:&lt;/span&gt;&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;C:\current_working_directory&amp;gt; python x.py&lt;/span&gt;&lt;div&gt;&amp;gt;&amp;gt; the output: inputs&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;spacingLeft=5;spacingRight=5;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1148.1299999999999" y="110" width="339.99" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="dzsg26OT-IGZxewS5xCa-8" value="Generate markdown string with Assignment number, credentials, problem statement, code and output neatly formatted. Create a .md file and store." style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1150.7" y="390" width="334.87" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="dzsg26OT-IGZxewS5xCa-11" value="Additional functionality may be added to use BrowserUse and upload the file to the google form." style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="580" y="680" width="252.5" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="dzsg26OT-IGZxewS5xCa-16" target="51" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dzsg26OT-IGZxewS5xCa-16" value="&lt;div&gt;Using the following theory topics:&lt;/div&gt;&lt;div&gt;{{theory}}&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Please provide an in-depth theoretical explanation that:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;1. Goes beyond basic definitions and explores advanced concepts&lt;/div&gt;&lt;div&gt;2. Includes:&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Mathematical foundations and proofs where applicable&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Common misconceptions and their clarifications&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Advanced applications and real-world use cases&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Lesser-known variations and implementations&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Performance considerations and optimization techniques&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Best practices and common pitfalls&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Connection to other related programming concepts&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;3. For each subtopic:&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Start with fundamental understanding&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Progress to intermediate concepts&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Conclude with advanced implementations&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Include code snippets to illustrate complex points&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Provide mathematical formulas where relevant&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Compare different approaches&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;4. Format requirements:&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Use clear section headings&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Include detailed examples&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Break down complex topics into digestible subsections&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Maintain academic writing style&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Aim for highly detailed content suitable for 4-5 pages&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;- Include references to academic papers or advanced texts where relevant&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Focus on providing unique insights and advanced information that goes beyond what&#39;s commonly found in basic tutorials or documentation.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=20;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1098.45" y="670" width="440" height="530" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="1" target="9" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="1" value="Generate code and test inputs" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="631.25" y="220" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="6" target="15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="801.75" y="409.9999999999999" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="6" value="Generate writeup file" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="869.25" y="220" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="9" target="37" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="Run script for each test input and capture output" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="618.75" y="290" width="172.5" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="43" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="10" target="13" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="Generate upload markdown&amp;nbsp;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="632.5" y="520" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="53" value="" style="edgeStyle=none;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="13" target="dzsg26OT-IGZxewS5xCa-11">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="Convert to pdf by opening in browser and ctrl+P (better formatting than python libraries)" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="580" y="590" width="250" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="Mail writeup using gmail API" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="869.25" y="290" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="21" target="23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="Generate code and test inputs" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="220" y="40" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="23" target="24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="Send API request to Gemini using the following prompt" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="213.13" y="110" width="158.75" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="24" target="dzsg26OT-IGZxewS5xCa-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="Please generate a Python program to solve the following problem statement: &#39;{ps}&#39;.&lt;br&gt;&lt;br&gt;The Python program MUST meet these requirements:&lt;br&gt;&lt;br&gt;1.  **Input Handling:**  It must include an input prompt to receive multiple numerical inputs on a single line, for example, like this: &#39;12 48 32&#39;.  It MUST use `.split()` and then `int()` with multiple assignment to convert these inputs into respective variables.&lt;br&gt;2.  **String Input Compatibility:** If the problem statement involves string inputs, the program should handle them appropriately.&lt;br&gt;3.  **Problem Solving Functions:**  The program must call functions that directly address and solve the problem described in the problem statement.&lt;br&gt;4.  **Output Display:**  The program must display the output that is returned from these function calls.&lt;br&gt;5.  **Code Style:**  Apply necessary comments and adhere to good coding practices.&lt;br&gt;6.  **Docstrings:** Include a concise, one-liner docstring for each function to explain its purpose.&lt;br&gt;&lt;br&gt;Furthermore, you need to generate two valid sets of test inputs that are logically consistent with the code. Present these test inputs in this specific format:&lt;div&gt;```&lt;/div&gt;&lt;div&gt;TEST_START&amp;nbsp;&lt;/div&gt;&lt;div&gt;&amp;lt;inputs for test case 1&amp;gt;&amp;nbsp;&lt;/div&gt;&lt;div&gt;&amp;lt;inputs for test case 2&amp;gt;&amp;nbsp;&lt;/div&gt;&lt;div&gt;TEST_END&lt;br&gt;&lt;/div&gt;&lt;div&gt;```&lt;/div&gt;&lt;div&gt;Your ENTIRE output MUST be formatted as follows, and contain NOTHING else:&amp;nbsp;&lt;/div&gt;&lt;div&gt;&amp;nbsp;```python&amp;nbsp;&lt;/div&gt;&lt;div&gt;{generated python code}&amp;nbsp;&lt;/div&gt;&lt;div&gt;```&lt;br&gt;&lt;/div&gt;&lt;div&gt;```&lt;/div&gt;&lt;div&gt;{generated test inputs}&lt;/div&gt;&lt;div&gt;```&lt;/div&gt;&lt;div&gt;Ensure there is NO extra text, no introductory phrases, and that the test inputs are logically valid based on the code you generate.  The test inputs should be designed to properly test the functionality of the generated Python code.&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=20;spacing=2;spacingRight=10;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="40" y="180" width="505" height="560" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="Return the code and test inputs" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="197.5" y="860" width="190" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="30" target="dzsg26OT-IGZxewS5xCa-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="Run script for each test input and capture output" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1231.88" y="40" width="172.5" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="Return the output" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1258.13" y="220" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" style="edgeStyle=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="37" target="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="813.75" y="430"/>
+                            <mxPoint x="813.75" y="240"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="42" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="37" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="If more programs exist, generate and test.&lt;br&gt;Else, call markdown function" style="rhombus;whiteSpace=wrap;spacingLeft=0;align=center;html=1;spacingTop=0;spacing=4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="630" y="360" width="150" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="45" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="44" target="dzsg26OT-IGZxewS5xCa-8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" value="Generate upload markdown&amp;nbsp;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1245.63" y="320" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="49" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="46" target="48" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="46" value="Generate writeup file" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1245.63" y="520" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" value="" style="edgeStyle=none;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="48" target="dzsg26OT-IGZxewS5xCa-16" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="48" value="Send API request to Gemini with the following prompt:" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1232.5100000000002" y="600" width="171.87" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" value="Store output in a &quot;Assignment {x} Write Up.txt&quot;&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="1222.3500000000001" y="1230" width="191.55" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="56" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="54" target="WIyWlLk6GJQsqaUBKTNV-3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="54" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Import the assignment pdf file of problem statement (ps) and write up topic (theory).&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="700" y="70" width="260" height="40" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -26,10 +26,28 @@ cookie_manager = stx.CookieManager()
 
 def main():
     """Main function to run the Streamlit application."""
-    # Header
-    st.title("🗿 Assignment Automation Tool")
-    st.markdown("Upload an assignment PDF and get the code solution and writeup automatically.")
     
+    # Create a container for the header with title and help button
+    header_container = st.container()
+    title_col, help_col = header_container.columns([5, 1])
+    
+    with title_col:
+        st.title("🗿 Assignment Automation Tool")
+        st.markdown("Upload an assignment PDF and get the code solution and writeup automatically.")
+
+    with help_col:
+        # Add some vertical space to align with the title
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        st.markdown("""
+                    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                        <a href="" target="_blank">
+                            <button style="background-color: #f63366; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
+                                How to use?
+                            </button>
+                        </a>
+                    </div>
+        """, unsafe_allow_html=True)
+        
     if "show_success" not in st.session_state:
         st.session_state.show_success = False
     
@@ -46,15 +64,29 @@ def main():
         }
     
     # Create the sidebar inputs with stored values as defaults
-    st.sidebar.header("Student Information")
+    # Create the form with horizontal inputs using columns
+    st.header("Student Information")
+
+    # Create three columns with equal width
+    col1, col2, col3 = st.columns(3)
+
+    # Place each input field in its own column
+    with col1:
+        name = st.text_input("Name", stored_info["name"])
+    with col2:
+        prn = st.text_input("PRN", stored_info["prn"])
+    with col3:
+        batch = st.text_input("Batch", stored_info["batch"])
+
+    # Save the collected information
     student_info = {
-        "name": st.sidebar.text_input("Name", stored_info["name"]),
-        "prn": st.sidebar.text_input("PRN", stored_info["prn"]),
-        "batch": st.sidebar.text_input("Batch", stored_info["batch"])
+        "name": name,
+        "prn": prn,
+        "batch": batch
     }
-    
+
     # Save values to cookies when form is submitted
-    if st.sidebar.button("Save Information"):
+    if st.button("Save Information"):
         cookie_manager.set("student_info", student_info)
         st.session_state.show_success = True
     
@@ -62,11 +94,11 @@ def main():
         st.success("Information saved to cookies!")
         
     # Display current information
-    st.write("Current Student Information:")
+    st.write("Crosscheck current student information:")
     st.write('```\n' + '\n'.join([i.upper() + ": " + student_info[i] for i in student_info.keys()]) + '\n```')
 
     # File uploader
-    st.header("Upload Assignment PDF")
+    st.subheader("Upload Assignment PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
     if uploaded_file is not None:
@@ -200,6 +232,15 @@ def main():
     # Footer
     st.markdown("---")
     st.markdown("© 2025 Assignment Automation Tool | Made by [Neil](https://www.linkedin.com/in/neil-lunavat) with ❤️")
+    st.markdown("""
+    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <a href="https://www.buymeacoffee.com/neil3196" target="_blank">
+            <button style="background-color: #7765E3; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
+                Buy me a Predator 🐺
+            </button>
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
