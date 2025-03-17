@@ -85,10 +85,11 @@ def main():
         "batch": batch
     }
 
-    # Save values to cookies when form is submitted
-    if st.button("Save Information"):
-        cookie_manager.set("student_info", student_info)
-        st.session_state.show_success = True
+    col1, col2 = st.columns([6, 1])
+    with col2:
+        if st.button("Save Information", type="primary", use_container_width=True):
+            cookie_manager.set("student_info", student_info)
+            st.session_state.show_success = True
     
     if st.session_state.show_success:
         st.success("Information saved to cookies!")
@@ -107,8 +108,8 @@ def main():
             tmp_file.write(uploaded_file.getvalue())
             pdf_path = tmp_file.name
         
-        # Process button
-        if st.button("Process Assignment"):
+        
+        if st.button("Process Assignment", type="primary"):
             with st.spinner("Processing"):
                 # Initialize progress
                 progress_bar = st.progress(0)
@@ -199,7 +200,7 @@ def main():
                         os.unlink(pdf_output_path)
                     except:
                         pass
-                    
+                
                 except Exception as e:
                     st.error(f"Error generating PDF: {str(e)}")
 
