@@ -39,7 +39,7 @@ class PDFParser:
         """Use Gemini API to extract all needed information from the PDF text."""
         prompt = f"""
         Analyze the following assignment text and extract these specific details:
-        1. Assignment Type: Determine if this is a Python, C++, or other type of assignment
+        1. Assignment Type: Determine if this is a Python, C++, C or other type of assignment
         2. Assignment Number: Extract the assignment number
         3. Problem Statement: Extract the full problem statement
         4. Theory Points: Extract all theory points as a list
@@ -47,7 +47,7 @@ class PDFParser:
         Format your response EXACTLY as follows (with no other text):
         ```json
         {{
-            "assignment_type": "python or cpp or other",
+            "assignment_type": "python or cpp or c or other",
             "assignment_number": "number or Unknown if not found",
             "problem_statement": "full problem statement",
             "theory_points": [

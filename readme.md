@@ -1,7 +1,7 @@
 # 🗿 Assignment Automation Tool
 
 <p align="center">
-  <img src="frontpage.png" alt="Assignment Automation Tool Home Page" width="800">
+  <img src="./assets/frontpage.png" alt="Assignment Automation Tool Home Page" width="800">
 </p>
 
 ## The End of Late-Night Assignment Panic™
@@ -11,7 +11,7 @@ Assignment Automation Tool transforms the entire assignment completion process f
 ## 🧠 How It Works
 
 <p align="center">
-  <img src="flowchart.svg" alt="Assignment Automation Process Flow">
+  <img src="./assets/flowchart.svg" alt="Assignment Automation Process Flow">
 </p>
 
 ## 🚀 What This Beast Can Do
@@ -46,7 +46,7 @@ Once processing is complete, you get:
 -   Perfectly formatted PDF ready for submission
 
 <p align="center">
-  <img src="output.png" alt="Final output with solution" width="800">
+  <img src="./assets/output.png" alt="Final output with solution" width="800">
 </p>
 
 ## ⚙️ The Tech Behind The Magic
