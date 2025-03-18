@@ -39,7 +39,7 @@ class GeminiAPI:
 
         7. **Structure:** For Python, write plain functions and main code without any if __name__ == "__main__" blocks. For C/C++, use basic function definitions and a simple main() function.
 
-        Generate two valid test inputs that are appropriate for a beginner's code. Format these inputs as:
+        Generate two test inputs that can produce the output the program is trying to demonstrate. Format these inputs as:
         ```
         TEST_START
         <inputs for test case 1>
@@ -67,6 +67,7 @@ class GeminiAPI:
         ENSURE:
         - Code is at beginner level (first semester programming student)
         - Use only basic libraries (stdio.h for C, iostream for C++, no imports for Python unless absolutely necessary)
+        - Try to solve the programs using basic algorithms like bubble sort, binary search etc. to avoid use of libraries like algorithm and vector.
         - Avoid all advanced coding concepts and syntax
         - Use descriptive variable names that beginners would understand (num1, num2, result, etc.)
         - Include simple comments that explain what the code is doing
