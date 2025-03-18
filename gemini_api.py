@@ -24,6 +24,7 @@ class GeminiAPI:
         1. **Beginner Level Code:** Write extremely simple code that looks like it's written by a student who JUST started learning programming. For Python, don't use advanced concepts like list comprehensions, f-strings, or if __name__ == "__main__".
 
         2. **Input Handling:** 
+        - ALWAYS start user input prompts with "Enter"
         - Python: Use simple input() with print prompts, split() for multiple inputs on one line, and basic type conversion.
         - C++: Use using namespace std; and cin with simple prompts.
         - C: Use scanf() with simple prompts.
