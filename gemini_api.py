@@ -109,12 +109,13 @@ class GeminiAPI:
         For each of these theory topics:
         {theory}
         
-        Create beginner-friendly sections with these characteristics:
-        
+        Expand the write up for relevant number of paragraphs to fill up 5 pages with these points in mind:
+        (Don't strictly follow this, the theory points are guidelines, not rules)
+
         1. Start each section with a simple heading (e.g., "### How to Generate Fibonacci Series")
-        2. Provide a clear conceptual explanation with examples and mathematical calculations where relevant
+        2. Provide a clear explanation with examples and mathematical calculations where relevant
         3. Include step-by-step explanations with basic examples
-        4. For programming concepts, include only 2-3 short code snippets for the entire write up, no more
+        4. For programming concepts, include only 2-3 short code snippets as examples for the entire write up, no more
         5. Use simple mathematical explanations - avoid complex notation and formulas
 
         ## Algorithm:

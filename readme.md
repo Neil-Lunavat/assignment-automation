@@ -34,7 +34,7 @@ Just drag and drop your assignment PDF and fill in your basic info once. The app
 The app automatically extracts key information from your assignment using the power of AI:
 
 <p align="center">
-  <img src="extractedinfo.png" alt="Extracted information from PDF" width="800">
+  <img src="./assets/extractedinfo.png" alt="Extracted information from PDF" width="800">
 </p>
 
 ### Step 3: Get Your Solution and Download
