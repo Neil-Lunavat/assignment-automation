@@ -32,7 +32,7 @@ class GeminiAPI:
         3. **Problem Solving:** Use basic functions that directly solve the problem for python - NO classes, NO complex data structures.
         3.5 **For C++**: use classes when object oriented programming concepts are stated in problem statement. 
 
-        4. **Style:** Include simple comments and basic variable names. Don't use advanced error handling.
+        4. **Style:** Include minimal comments and basic variable names. Don't use advanced error handling.
 
         5. **Output Format:** Use basic print statements (print() in Python, printf() in C, std::cout in C++).
 
