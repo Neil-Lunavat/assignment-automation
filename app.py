@@ -4,13 +4,53 @@ import tempfile
 import base64
 from dotenv import load_dotenv
 import extra_streamlit_components as stx
+from typing import Dict, List, Any, Tuple, Optional
+import pandas as pd
 
 # Load local modules
 from pdf_parser import PDFParser
 from gemini_api import GeminiAPI
-from code_executor import CodeExecutor
+from code_executor import CodeExecutor, TestCase
 from markdown_generator import MarkdownGenerator, WriteupFormatter
 from markdown_to_pdf import MarkdownToPDF
+
+# Main application function
+def main():
+    """Main function to run the Streamlit application."""
+    # Initialize session state
+    init_session_state()
+    
+    # Render header
+    render_header()
+    
+    # Get student information
+    student_info = render_student_info_section()
+    
+    # File uploader for assignment PDF
+    st.subheader("Upload Assignment PDF")
+    uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
+    
+    if uploaded_file is not None:
+        # Save the uploaded file temporarily
+        pdf_path = save_uploaded_file(uploaded_file)
+        
+        # Render file handling section if needed
+        requires_file_handling, test_files = render_file_handling_section()
+        
+        # Process button
+        if st.button("Process Assignment", type="primary"):
+            success = process_assignment(
+                pdf_path, 
+                student_info, 
+                requires_file_handling,
+                test_files
+            )
+    
+    # Display results if processing is complete
+    display_results()
+    
+    # Render footer
+    render_footer()
 
 # Load environment variables
 load_dotenv()
@@ -24,10 +64,120 @@ st.set_page_config(
 
 cookie_manager = stx.CookieManager()
 
-def main():
-    """Main function to run the Streamlit application."""
+def render_file_handling_section():
+    """Render the file handling section for test files."""
+    st.subheader("File Handling")
+    st.session_state.requires_file_handling = st.checkbox(
+        "This assignment requires file handling", 
+        value=st.session_state.requires_file_handling
+    )
     
-    # Create a container for the header with title and help button
+    if st.session_state.requires_file_handling:
+        st.info("Upload test files for your code to use during execution. Files will be renamed to data.txt, data1.txt, etc.")
+        uploaded_files = st.file_uploader(
+            "Upload test files", 
+            accept_multiple_files=True,
+            type=["txt", "csv", "dat", "json", "xlsx", "xls"]
+        )
+        if uploaded_files:
+            st.session_state.uploaded_test_files = uploaded_files
+            st.success(f"Uploaded {len(uploaded_files)} test files for code execution.")
+            
+            # Display file previews
+            if len(uploaded_files) > 0:
+                for i, file in enumerate(uploaded_files):
+                    with st.expander(f"Preview: {file.name}"):
+                        try:
+                            content = file.getvalue().decode('utf-8')
+                            st.text_area(f"File content", value=content, height=200)
+                        except UnicodeDecodeError:
+                            st.warning("Binary file - preview not available")
+        else:
+            st.session_state.uploaded_test_files = []
+    else:
+        st.session_state.uploaded_test_files = []
+    
+    return st.session_state.requires_file_handling, st.session_state.uploaded_test_files
+
+def display_results():
+    """Display the processing results in tabs."""
+    if not st.session_state.processing_complete:
+        return
+    
+    # Create tabs for results
+    tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
+    
+    # Display content in tabs based on session state
+    with tab1:
+        # Download button for writeup
+        st.download_button(
+            label="Download Writeup as Text",
+            data=st.session_state.formatted_writeup,
+            file_name=f"Assignment_{st.session_state.assignment_number}_Writeup.txt",
+            mime="text/plain"
+        )
+        
+        # Display the writeup
+        st.markdown(st.session_state.formatted_writeup)
+    
+    with tab2:
+        # Download button for PDF
+        st.download_button(
+            label="Download PDF",
+            data=st.session_state.pdf_content,
+            file_name=st.session_state.filename,
+            mime="application/pdf"
+        )
+        # Display the markdown content
+        st.markdown(st.session_state.upload_pdf_content)
+
+def render_footer():
+    """Render the application footer."""
+    st.markdown("---")
+    st.markdown("© 2025 Assignment Automation Tool | Made by [Neil](https://www.linkedin.com/in/neil-lunavat) with ❤️")
+    st.markdown("""
+    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <a href="https://www.buymeacoffee.com/neil3196" target="_blank">
+            <button style="background-color: #7765E3; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
+                Buy me a Predator 🐺
+            </button>
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Initialize session state variables
+def init_session_state():
+    """Initialize session state variables if they don't exist."""
+    if "show_success" not in st.session_state:
+        st.session_state.show_success = False
+    
+    if "processing_complete" not in st.session_state:
+        st.session_state.processing_complete = False
+    
+    if "requires_file_handling" not in st.session_state:
+        st.session_state.requires_file_handling = False
+    
+    if "uploaded_test_files" not in st.session_state:
+        st.session_state.uploaded_test_files = []
+
+def get_student_info() -> Dict[str, str]:
+    """Get student information from cookies or create empty defaults."""
+    stored_info = cookie_manager.get("student_info")
+    if not stored_info:
+        stored_info = {
+            "name": "",
+            "prn": "",
+            "batch": ""
+        }
+    return stored_info
+
+def save_student_info(student_info: Dict[str, str]):
+    """Save student information to cookies."""
+    cookie_manager.set("student_info", student_info)
+    st.session_state.show_success = True
+
+def render_header():
+    """Render application header and help button."""
     header_container = st.container()
     title_col, help_col = header_container.columns([5, 1])
     
@@ -36,7 +186,6 @@ def main():
         st.markdown("Upload an assignment PDF and get the code solution and writeup automatically.")
 
     with help_col:
-        # Add some vertical space to align with the title
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         st.markdown("""
                     <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
@@ -47,26 +196,13 @@ def main():
                         </a>
                     </div>
         """, unsafe_allow_html=True)
-        
-    if "show_success" not in st.session_state:
-        st.session_state.show_success = False
-    
-    # Initialize processing_complete in session state if it doesn't exist
-    if "processing_complete" not in st.session_state:
-        st.session_state.processing_complete = False
 
-    stored_info = cookie_manager.get("student_info")
-    if not stored_info:
-        stored_info = {
-            "name": "",
-            "prn": "",
-            "batch": ""
-        }
-    
-    # Create the sidebar inputs with stored values as defaults
-    # Create the form with horizontal inputs using columns
+def render_student_info_section() -> Dict[str, str]:
+    """Render student information section and return the collected info."""
     st.header("Student Information")
-
+    
+    stored_info = get_student_info()
+    
     # Create three columns with equal width
     col1, col2, col3 = st.columns(3)
 
@@ -88,8 +224,7 @@ def main():
     col1, col2 = st.columns([6, 1])
     with col2:
         if st.button("Save Information", type="primary", use_container_width=True):
-            cookie_manager.set("student_info", student_info)
-            st.session_state.show_success = True
+            save_student_info(student_info)
     
     if st.session_state.show_success:
         st.success("Information saved to cookies!")
@@ -97,151 +232,184 @@ def main():
     # Display current information
     st.write("Crosscheck current student information:")
     st.write('```\n' + '\n'.join([i.upper() + ": " + student_info[i] for i in student_info.keys()]) + '\n```')
-
-    # File uploader
-    st.subheader("Upload Assignment PDF")
-    uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
-    if uploaded_file is not None:
-        # Save the uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+    return student_info
+
+def save_uploaded_file(uploaded_file, index: int = None) -> str:
+    """Save an uploaded file to a temporary location and return the path.
+    
+    Args:
+        uploaded_file: The uploaded file object
+        index: Optional index for naming files for file handling tests
+        
+    Returns:
+        Path to the saved file
+    """
+    # For file handling tests, use standardized names (data.txt, data1.txt, etc.)
+    if index is not None:
+        # Get the file extension from the original file
+        _, ext = os.path.splitext(uploaded_file.name)
+        # Use default .txt extension if none is provided
+        ext = ext if ext else ".txt"
+        # Create standardized filename (data.txt, data1.txt, data2.txt, etc.)
+        filename = f"data{index if index > 0 else ''}{ext}"
+        temp_dir = tempfile.gettempdir()
+        file_path = os.path.join(temp_dir, filename)
+        
+        # Write the file content
+        with open(file_path, 'wb') as f:
+            f.write(uploaded_file.getvalue())
+        
+        return file_path
+    else:
+        # For other files like PDFs, use a generic temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
-            pdf_path = tmp_file.name
-        
-        
-        if st.button("Process Assignment", type="primary"):
-            with st.spinner("Processing"):
-                # Initialize progress
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                
-                # Step 1: Parse the PDF
-                status_text.text("Extracting problem statement and theory points using Gemini...")
-                pdf_parser = PDFParser(pdf_path)
-                problem_statement = pdf_parser.extract_problem_statement()
-                theory_points = pdf_parser.extract_theory_points()
-                assignment_number = pdf_parser.extract_assignment_number()
-                assignment_type = pdf_parser.assignment_type
-                progress_bar.progress(20)
-                
-                # Display extracted information
-                st.subheader("Extracted Information")
-                st.markdown(f"**Assignment Number:** {assignment_number}")
-                with st.expander("Problem Statement"):
-                    st.write(problem_statement)
-                with st.expander("Theory Points"):
-                    for point in theory_points:
-                        st.write(f"- {point}")
-                
-                # Step 2: Use Gemini API to generate code and writeup
-                status_text.text("Generating code solution using Gemini...")
-                gemini = GeminiAPI()
-                code_response = gemini.generate_code(problem_statement, assignment_type)
-                progress_bar.progress(40)
-                
-                status_text.text("Generating theoretical writeup using Gemini...")
-                writeup_response = gemini.generate_writeup(theory_points, code_response, assignment_number, problem_statement, assignment_type)
-                progress_bar.progress(60)
-                
-                # Step 3: Execute the code
-                status_text.text("Executing code with test inputs...")
-                code_executor = CodeExecutor(code_response, assignment_type)
-                code, outputs = code_executor.execute_code(f"C:\\Users\\{student_info['name']}\\Desktop\\programs", assignment_type)
-                progress_bar.progress(70)
+            return tmp_file.name
 
-                # Step 4: Generate markdown and PDF
-                status_text.text("Generating markdown and PDF using md-to-pdf API...")
-                markdown_gen = MarkdownGenerator(
-                    assignment_number,
-                    assignment_type,
-                    student_info["name"],
-                    student_info["prn"],
-                    student_info["batch"],
-                    problem_statement,
-                    code,
-                    outputs
-                )
-                
-                filename = f"{student_info['prn']}_{student_info['name'].split(' ')[0]}_{student_info['batch']}.pdf"
-
-                # Save markdown to temporary file
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.md') as tmp_md:
-                    upload_pdf_content = markdown_gen.generate_upload_markdown()
-                    tmp_md.write(upload_pdf_content.encode())
-                    markdown_path = tmp_md.name
-                
-                # Convert markdown to PDF
-                md_to_pdf = MarkdownToPDF()
-                pdf_output_path = os.path.join(tempfile.gettempdir(), filename)
-                try:
-                    md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
-                    with open(pdf_output_path, "rb") as pdf_file:
-                        pdf_content = pdf_file.read()
-                    
-                    # Format the writeup
-                    writeup_formatter = WriteupFormatter(writeup_response)
-                    formatted_writeup = writeup_formatter.format_content()
-                    
-                    progress_bar.progress(100)
-                    status_text.text("Processing complete!")
-                    
-                    # Save results to session state so they persist between re-renders
-                    st.session_state.processing_complete = True
-                    st.session_state.formatted_writeup = formatted_writeup
-                    st.session_state.pdf_content = pdf_content
-                    st.session_state.upload_pdf_content = upload_pdf_content
-                    st.session_state.assignment_number = assignment_number
-                    st.session_state.filename = filename
-                    
-                    # Clean up temporary files
-                    try:
-                        os.unlink(pdf_path)
-                        os.unlink(markdown_path)
-                        os.unlink(pdf_output_path)
-                    except:
-                        pass
-                
-                except Exception as e:
-                    st.error(f"Error generating PDF: {str(e)}")
-
-        if st.session_state.processing_complete:
-            # Create tabs outside the button click handler so they persist
-            tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
-                  
-            # Display content in tabs based on session state
-            with tab1:
-                # Still keep the download option
-                st.download_button(
-                    label="Download Writeup as Text",
-                    data=st.session_state.formatted_writeup,
-                    file_name=f"Assignment_{st.session_state.assignment_number}_Writeup.txt",
-                    mime="text/plain"
-                )
-                
-                # Display the writeup
-                st.markdown(st.session_state.formatted_writeup)
-            
-            with tab2:
-                st.download_button(
-                    label="Download PDF",
-                    data=st.session_state.pdf_content,
-                    file_name=st.session_state.filename,
-                    mime="application/pdf"
-                )
-                st.markdown(st.session_state.upload_pdf_content)
+def process_assignment(
+    pdf_path: str, 
+    student_info: Dict[str, str], 
+    requires_file_handling: bool = False,
+    test_files: List[Any] = None
+) -> bool:
+    """Process the assignment and return whether it was successful.
+    
+    Args:
+        pdf_path: Path to the uploaded PDF file
+        student_info: Dictionary containing student information
+        requires_file_handling: Whether the assignment requires file handling
+        test_files: List of uploaded test files for file handling
         
-    # Footer
-    st.markdown("---")
-    st.markdown("© 2025 Assignment Automation Tool | Made by [Neil](https://www.linkedin.com/in/neil-lunavat) with ❤️")
-    st.markdown("""
-    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-        <a href="https://www.buymeacoffee.com/neil3196" target="_blank">
-            <button style="background-color: #7765E3; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
-                Buy me a Predator 🐺
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
+    Returns:
+        True if processing was successful, False otherwise
+    """
+    # Initialize progress tracking
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    try:
+        # Step 1: Parse the PDF
+        status_text.text("Extracting problem statement and theory points using Gemini...")
+        pdf_parser = PDFParser(pdf_path)
+        problem_statement = pdf_parser.extract_problem_statement()
+        theory_points = pdf_parser.extract_theory_points()
+        assignment_number = pdf_parser.extract_assignment_number()
+        assignment_type = pdf_parser.assignment_type
+        progress_bar.progress(20)
+        
+        # Display extracted information
+        st.subheader("Extracted Information")
+        st.markdown(f"**Assignment Number:** {assignment_number}")
+        with st.expander("Problem Statement"):
+            st.write(problem_statement)
+        with st.expander("Theory Points"):
+            for point in theory_points:
+                st.write(f"- {point}")
+        
+        # Step 2: Use Gemini API to generate code
+        status_text.text("Generating code solution using Gemini...")
+        gemini = GeminiAPI()
+        code_response = gemini.generate_code(
+            problem_statement, 
+            assignment_type,
+            requires_file_handling
+        )
+        progress_bar.progress(40)
+        
+        # Save test files if provided with standardized names
+        file_paths = []
+        if test_files:
+            for i, file in enumerate(test_files):
+                file_path = save_uploaded_file(file, index=i)
+                file_paths.append(file_path)
+                
+            # Display information about renamed files
+            st.info(f"Test files have been renamed to: {', '.join([os.path.basename(path) for path in file_paths])}")
+            st.info("Your code will access these files using these standard names.")
+
+        
+        # Step 3: Execute the code
+        status_text.text("Executing code with test inputs...")
+        code_executor = CodeExecutor(code_response, assignment_type)
+        working_dir = f"C:\\Users\\{student_info['name']}\\Desktop\\programs"
+        code, outputs = code_executor.execute_code(working_dir, file_paths)
+        progress_bar.progress(60)
+        
+        # Step 4: Generate theoretical writeup
+        status_text.text("Generating theoretical writeup using Gemini...")
+        # writeup_response = gemini.generate_writeup(
+        #     theory_points, 
+        #     code_response, 
+        #     assignment_number, 
+        #     problem_statement, 
+        #     assignment_type
+        # )
+        writeup_response = "# No write up for debugging"
+        progress_bar.progress(70)
+        
+        # Step 5: Generate markdown and PDF
+        status_text.text("Generating markdown and PDF using md-to-pdf API...")
+        markdown_gen = MarkdownGenerator(
+            assignment_number,
+            assignment_type,
+            student_info["name"],
+            student_info["prn"],
+            student_info["batch"],
+            problem_statement,
+            code,
+            outputs
+        )
+        
+        filename = f"{student_info['prn']}_{student_info['name'].split(' ')[0]}_{student_info['batch']}.pdf"
+
+        # Save markdown to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.md') as tmp_md:
+            upload_pdf_content = markdown_gen.generate_upload_markdown()
+            tmp_md.write(upload_pdf_content.encode())
+            markdown_path = tmp_md.name
+        
+        # Convert markdown to PDF
+        md_to_pdf = MarkdownToPDF()
+        pdf_output_path = os.path.join(tempfile.gettempdir(), filename)
+        
+        md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
+        with open(pdf_output_path, "rb") as pdf_file:
+            pdf_content = pdf_file.read()
+        
+        # Format the writeup
+        writeup_formatter = WriteupFormatter(writeup_response)
+        formatted_writeup = writeup_formatter.format_content()
+        
+        progress_bar.progress(100)
+        status_text.text("Processing complete!")
+        
+        # Save results to session state
+        st.session_state.processing_complete = True
+        st.session_state.formatted_writeup = formatted_writeup
+        st.session_state.pdf_content = pdf_content
+        st.session_state.upload_pdf_content = upload_pdf_content
+        st.session_state.assignment_number = assignment_number
+        st.session_state.filename = filename
+        
+        # Clean up temporary files
+        try:
+            os.unlink(pdf_path)
+            os.unlink(markdown_path)
+            os.unlink(pdf_output_path)
+            # Clean up test files if any
+            for path in file_paths:
+                os.unlink(path)
+        except Exception as e:
+            st.warning(f"Error cleaning up temporary files: {str(e)}")
+        
+        return True
+        
+    except Exception as e:
+        progress_bar.progress(100)
+        status_text.text("Error processing assignment")
+        st.error(f"Error: {str(e)}")
+        return False
 
 if __name__ == "__main__":
     main()

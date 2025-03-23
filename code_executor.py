@@ -3,415 +3,388 @@ import re
 import subprocess
 import tempfile
 import platform
-from typing import Union, List, Tuple, Optional
+from typing import List, Tuple, Dict, Union, Optional, Any
+from dataclasses import dataclass
+from enum import Enum
 
-
-class CodeExecutor:
-    """A class that executes code with test inputs and captures the output."""
+class LanguageType(Enum):
+    """Enum for supported programming languages."""
+    PYTHON = "python"
+    CPP = "cpp"
+    C = "c"
     
-    def __init__(self, code_content: str, assignment_type: str):
-        """Initialize with the code content and test inputs.
+    @classmethod
+    def from_string(cls, value: str) -> "LanguageType":
+        """Convert string to enum value safely."""
+        try:
+            return cls(value.lower())
+        except ValueError:
+            return cls.PYTHON  # Default to Python
+
+@dataclass
+class TestCase:
+    """Data class to represent a test case."""
+    inputs: str
+    requires_file: bool = False
+    file_path: Optional[str] = None
+
+@dataclass
+class ProgramInfo:
+    """Data class to represent a program with its test cases."""
+    code: str
+    test_cases: List[TestCase]
+    language: LanguageType
+
+class CodeParser:
+    """Parser for extracting code and test inputs from Gemini API response."""
+    
+    @staticmethod
+    def extract_code_and_inputs(content: str, language_type: str) -> List[ProgramInfo]:
+        """Extract multiple codes and test inputs from the Gemini API response.
         
         Args:
-            code_content: The content containing code blocks and test inputs
-            assignment_type: The language type ('python', 'cpp', or 'c')
-        """
-        self.assignment_type = assignment_type.lower()
-        self.code, self.test_inputs = self._extract_code_and_inputs(code_content)
-        self.temp_dir = tempfile.mkdtemp()
-    
-    def _extract_code_and_inputs(self, code_content: str) -> Tuple[Union[str, List[str]], List[List[str]]]:
-        """Extract code blocks and test inputs from the content.
-        
-        Args:
-            code_content: Text containing code blocks and test inputs
+            content: The full response from Gemini API
+            language_type: The programming language (python, cpp, c)
             
         Returns:
-            A tuple of (code, test_inputs) where:
-            - code is either a single string or a list of code strings
-            - test_inputs is a list of lists of input strings
+            List of ProgramInfo objects containing code and test cases
         """
-        # Extract all code blocks with the assignment type
-        code_pattern = r"```" + self.assignment_type + r"\s+(.*?)\s+```"
-        code_blocks = re.findall(code_pattern, code_content, re.DOTALL)
-        codes = [block.strip() for block in code_blocks] if code_blocks else []
+        language = LanguageType.from_string(language_type)
+        
+        # Extract all code blocks
+        code_pattern = f"```{language.value}\\s+(.*?)\\s+```"
+        code_blocks = re.findall(code_pattern, content, re.DOTALL)
         
         # Extract all test input blocks
         test_pattern = r"TEST_START\s+(.*?)\s+TEST_END"
-        test_blocks = re.findall(test_pattern, code_content, re.DOTALL)
+        test_blocks = re.findall(test_pattern, content, re.DOTALL)
+        
+        # Extract file handling flags
+        file_pattern = r"FILE_REQUIRED\s+(.*?)\s+FILE_END"
+        file_blocks = re.findall(file_pattern, content, re.DOTALL)
+        
+        # If no code blocks found, try to extract the whole content
+        if not code_blocks:
+            code_blocks = [content.strip()]
+        
+        # Process test blocks to get individual test cases
         input_blocks = []
-        
         for block in test_blocks:
-            # Split by double newline to separate test cases
-            inputs = block.strip().split('\n\n')
-            input_blocks.append(inputs)
+            input_blocks.append(block.strip().split('\n\n'))
         
-        # Handle case where no code blocks were found
-        if not codes:
-            code_match = re.search(code_pattern, code_content, re.DOTALL)
-            codes = [code_match.group(1).strip()] if code_match else [code_content.strip()]
-        
-        # Handle case where no test input blocks were found
+        # If no test blocks found, create empty test case
         if not input_blocks:
-            test_match = re.search(test_pattern, code_content, re.DOTALL)
-            if test_match:
-                input_blocks = [test_match.group(1).strip().split('\n\n')]
-            else:
-                input_blocks = [[]]
+            input_blocks = [[""]]
         
-        # Balance codes and input blocks
-        self._balance_codes_and_inputs(codes, input_blocks)
+        # Ensure we have enough test cases for each code block
+        if len(code_blocks) > len(input_blocks):
+            last_input = input_blocks[-1] if input_blocks else [""]
+            input_blocks.extend([last_input] * (len(code_blocks) - len(input_blocks)))
+        elif len(input_blocks) > len(code_blocks):
+            input_blocks = input_blocks[:len(code_blocks)]
         
-        # Return single code string or list of strings
-        return (codes[0], input_blocks[0]) if len(codes) == 1 else (codes, input_blocks)
-    
-    def _balance_codes_and_inputs(self, codes: List[str], input_blocks: List[List[str]]) -> None:
-        """Ensure the number of code blocks and input blocks match.
+        # Process file requirements
+        file_required = [False] * len(code_blocks)
+        if file_blocks:
+            for i, file_block in enumerate(file_blocks):
+                if i < len(file_required):
+                    file_required[i] = True
         
-        Args:
-            codes: List of code strings
-            input_blocks: List of lists of test inputs
-        """
-        if len(codes) > len(input_blocks):
-            # If more codes than inputs, duplicate the last input block or add empty ones
-            last_input = input_blocks[-1] if input_blocks else []
-            input_blocks.extend([last_input] * (len(codes) - len(input_blocks)))
-        elif len(input_blocks) > len(codes):
-            # If more inputs than codes, keep only the first inputs matching the number of codes
-            input_blocks[:] = input_blocks[:len(codes)]
-    
-    def save_code_to_file(self, index: Optional[int] = None) -> str:
-        """Save the extracted code to a temporary file.
-        
-        Args:
-            index: Index of the code to save (if multiple codes)
+        # Create ProgramInfo objects
+        programs = []
+        for i, (code, inputs) in enumerate(zip(code_blocks, input_blocks)):
+            test_cases = []
+            for input_data in inputs:
+                requires_file = i < len(file_required) and file_required[i]
+                test_cases.append(TestCase(inputs=input_data, requires_file=requires_file))
             
-        Returns:
-            Path to the saved file
-        """
-        is_multiple = isinstance(self.code, list)
+            programs.append(ProgramInfo(
+                code=code.strip(),
+                test_cases=test_cases,
+                language=language
+            ))
         
-        if is_multiple:
-            # For multiple codes
-            code_index = index if index is not None else 0
-            code = self.code[code_index]
-            ext = self._get_file_extension()
-            filename = os.path.join(self.temp_dir, f"solution_{code_index}{ext}")
-        else:
-            # For single code
-            code = self.code
-            ext = self._get_file_extension()
-            filename = os.path.join(self.temp_dir, f"solution{ext}")
-        
-        with open(filename, "w") as f:
-            f.write(code)
-        
-        return filename
-    
-    def _get_file_extension(self) -> str:
-        """Get the appropriate file extension based on the assignment type.
-        
-        Returns:
-            File extension string including the dot
-        """
-        extensions = {
-            "python": ".py",
-            "cpp": ".cpp",
-            "c": ".c"
-        }
-        return extensions.get(self.assignment_type, ".txt")
-    
-    def _get_compiler_command(self) -> str:
-        """Get the appropriate compiler command based on the assignment type.
-        
-        Returns:
-            Compiler command string
-        """
-        commands = {
-            "cpp": "g++",
-            "c": "gcc"
-        }
-        return commands.get(self.assignment_type, "")
-    
-    def _process_output(self, stdout: str, stderr: str, input_data: str) -> str:
-        """Process the output of code execution.
-        
-        Args:
-            stdout: Standard output from process
-            stderr: Standard error from process
-            input_data: Input data provided to the process
-            
-        Returns:
-            Formatted result string
-        """
-        if stderr:
-            return stderr
-        
-        # Split inputs and outputs
-        input_lines = input_data.split('\n')
-        stdout_parts = stdout.strip('\n').split(': ')
-        
-        result = ""
-        input_index = 0
-        
-        # Match inputs with prompt lines
-        for line in stdout_parts:
-            if "Enter" in line and input_index < len(input_lines):
-                result += line + ": " + input_lines[input_index] + "\n"
-                input_index += 1
-            
-        # Add remaining output
-        result += ': '.join(stdout_parts[input_index:])
-        return result
-    
-    def _execute_compiled_code(self, exe_path: str, input_data: str, cwd: str, run_cmd: str) -> str:
-        """Execute compiled code (for C and C++).
-        
-        Args:
-            exe_path: Path to the executable
-            input_data: Input data to provide
-            cwd: Current working directory (for display)
-            run_cmd: Command to show in output
-            
-        Returns:
-            Execution result string
-        """
-        result = f"{cwd}> {run_cmd}\n"
-        
-        try:
-            # Execute the compiled program
-            process = subprocess.Popen(
-                [exe_path],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            
-            # Use input data as stdin
-            stdout, stderr = process.communicate(input=input_data, timeout=10)
-            
-            result += self._process_output(stdout, stderr, input_data)
-            return result
-            
-        except subprocess.TimeoutExpired:
-            return f"{result}Execution timed out after 10 seconds"
-        except Exception as e:
-            return f"{result}Error: {str(e)}"
-    
-    def _execute_python_code(self, code_file: str, input_data: str, cwd: str, file_name: str) -> str:
-        """Execute Python code.
-        
-        Args:
-            code_file: Path to the Python file
-            input_data: Input data to provide
-            cwd: Current working directory (for display)
-            file_name: Filename to show in output
-            
-        Returns:
-            Execution result string
-        """
-        result = f"{cwd}> python {file_name}\n"
-        
-        try:
-            # Execute the Python file with input
-            process = subprocess.Popen(
-                ["python", code_file],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            
-            stdout, stderr = process.communicate(input=input_data, timeout=10)
-            
-            if stderr:
-                result += stderr
-            else:
-                result += self._process_output(stdout, stderr, input_data)
-            
-            return result
-            
-        except subprocess.TimeoutExpired:
-            return f"{result}Execution timed out after 10 seconds"
-        except Exception as e:
-            return f"{result}Error: {str(e)}"
-    
-    def _compile_code(self, src_path: str, exe_path: str, compiler_cmd: str, src_file: str, cwd: str) -> Tuple[bool, str]:
-        """Compile C or C++ code.
-        
-        Args:
-            src_path: Path to the source file
-            exe_path: Path for the executable output
-            compiler_cmd: Compiler command to use
-            src_file: Source filename to show in output
-            cwd: Current working directory (for display)
-            
-        Returns:
-            Tuple of (success, compile_output)
-        """
-        exe_name = os.path.basename(exe_path)
-        compile_cmd = f"{cwd}> {compiler_cmd} {src_file} -o {exe_name}\n"
-        
-        compile_process = subprocess.Popen(
-            [compiler_cmd, src_path, "-o", exe_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        
-        _, compile_stderr = compile_process.communicate()
-        
-        # Check if compilation was successful
-        if compile_process.returncode != 0:
-            return False, compile_cmd + compile_stderr
-        
-        return True, compile_cmd
-    
-    def execute_code(self, cwd: str, assignment_type: str) -> Tuple[Union[str, List[str]], Union[List[str], List[List[str]]]]:
-        """Execute the code with each test input and capture the output.
-        
-        Args:
-            cwd: Current working directory (for display)
-            assignment_type: The language type ('python', 'cpp', or 'c')
-            
-        Returns:
-            Tuple of (code, outputs) where:
-            - code is either a single string or a list of code strings
-            - outputs is either a list of output strings or a list of lists of output strings
-        """
-        is_multiple = isinstance(self.code, list)
-        
-        if assignment_type == "python":
-            return self._execute_python_assignment(cwd, is_multiple)
-        elif assignment_type in ["cpp", "c"]:
-            return self._execute_compiled_assignment(cwd, is_multiple, assignment_type)
-        else:
-            # Default case for unsupported assignment types
-            return self.code, [f"Unsupported assignment type: {assignment_type}"]
-    
-    def _execute_python_assignment(self, cwd: str, is_multiple: bool) -> Tuple[Union[str, List[str]], Union[List[str], List[List[str]]]]:
-        """Execute Python assignment code.
-        
-        Args:
-            cwd: Current working directory (for display)
-            is_multiple: Whether multiple code blocks exist
-            
-        Returns:
-            Tuple of (code, outputs)
-        """
-        if is_multiple:
-            # Handle multiple Python programs
-            all_codes = self.code
-            all_inputs = self.test_inputs
-            all_outputs = []
-            
-            for i, (code, inputs) in enumerate(zip(all_codes, all_inputs)):
-                code_file = self.save_code_to_file(i)
-                file_name = f"solution_{i}.py"
-                
-                program_outputs = []
-                for input_data in inputs:
-                    result = self._execute_python_code(code_file, input_data, cwd, file_name)
-                    program_outputs.append(result)
-                
-                all_outputs.append(program_outputs)
-            return all_codes, all_outputs
-        
-        else:
-            # Single program case
-            code_file = self.save_code_to_file()
-            
-            outputs = []
-            for input_data in self.test_inputs:
-                result = self._execute_python_code(code_file, input_data, cwd, "solution.py")
-                outputs.append(result)
-            
-            return self.code, outputs
-    
-    def _execute_compiled_assignment(self, cwd: str, is_multiple: bool, assignment_type: str) -> Tuple[Union[str, List[str]], Union[List[str], List[List[str]]]]:
-        """Execute C or C++ assignment code.
-        
-        Args:
-            cwd: Current working directory (for display)
-            is_multiple: Whether multiple code blocks exist
-            assignment_type: The language type ('cpp' or 'c')
-            
-        Returns:
-            Tuple of (code, outputs)
-        """
-        compiler_cmd = self._get_compiler_command()
-        file_ext = self._get_file_extension()
-        
-        if is_multiple:
-            # Handle multiple programs
-            all_codes = self.code
-            all_inputs = self.test_inputs
-            all_outputs = []
-            
-            for i, (code, inputs) in enumerate(zip(all_codes, all_inputs)):
-                # Save code to file
-                src_file = f"solution_{i}{file_ext}"
-                src_path = os.path.join(self.temp_dir, src_file)
-                with open(src_path, "w") as f:
-                    f.write(code)
-                
-                exe_file = f"solution_{i}.exe" if platform.system() == "Windows" else f"solution_{i}"
-                exe_path = os.path.join(self.temp_dir, exe_file)
-                
-                program_outputs = []
-                
-                # Compile the code
-                success, compile_output = self._compile_code(src_path, exe_path, compiler_cmd, src_file, cwd)
-                
-                if not success:
-                    # Compilation error
-                    program_outputs.append(compile_output)
-                    all_outputs.append(program_outputs)
-                    continue  # Skip execution for this program
+        return programs
 
-                for input_data in inputs:
-                    # Command to run the compiled program (use ./ on Unix)
-                    run_prefix = "./" if platform.system() != "Windows" else ""
-                    run_cmd = f"{run_prefix}{os.path.basename(exe_path)}"
-                    
-                    result = self._execute_compiled_code(exe_path, input_data, cwd, run_cmd)
-                    # Add compilation command to first output only
-                    if len(program_outputs) == 0:
-                        result = compile_output + result
-                    
-                    program_outputs.append(result)
-                
-                all_outputs.append(program_outputs)
-            
-            return all_codes, all_outputs
+class ExecutionResult:
+    """Class to store and format execution results."""
+    
+    def __init__(self, 
+                 command: str, 
+                 stdout: str, 
+                 stderr: str = "", 
+                 timed_out: bool = False, 
+                 error: str = ""):
+        self.command = command
+        self.stdout = stdout
+        self.stderr = stderr
+        self.timed_out = timed_out
+        self.error = error
+    
+    def format_output(self, working_dir: str, input_data: str = "") -> str:
+        """Format the execution result to look like a natural command-line interaction.
         
-        else:
-            # Single program
-            src_file = f"solution{file_ext}"
-            src_path = os.path.join(self.temp_dir, src_file)
-            with open(src_path, "w") as f:
-                f.write(self.code)
+        Args:
+            working_dir: The current working directory
+            input_data: The input data that was provided
             
-            exe_file = "solution.exe" if platform.system() == "Windows" else "solution"
-            exe_path = os.path.join(self.temp_dir, exe_file)
+        Returns:
+            Formatted output string showing a natural command line interaction
+        """
+        # Start with the command prompt with working directory
+        result = f"{working_dir}> {self.command}\n"
+        
+        if self.timed_out:
+            return result + "Execution timed out after 10 seconds"
+        
+        if self.error:
+            return result + f"Error: {self.error}"
+        
+        if self.stderr:
+            return result + self.stderr
+        
+        # Format to match your desired pattern: input prompt > input > outputs
+        if input_data:
+            input_lines = input_data.split('\n')
+            output_lines = self.stdout.split('\n')
+            formatted_result = []
+            input_idx = 0
             
-            outputs = []
+            # First, collect all the prompt lines
+            prompt_lines = []
+            for line in output_lines:
+                if any(prompt.lower() in line.lower() for prompt in ["Enter", "Input", "Please", "Type", "Provide"]):
+                    prompt_lines.append(line)
             
-            # Compile the code
-            success, compile_output = self._compile_code(src_path, exe_path, compiler_cmd, src_file, cwd)
+            # If no prompts found, just return the raw output
+            if not prompt_lines:
+                return result + self.stdout
             
-            if not success:
-                # Compilation error
-                outputs.append(compile_output)
-                return self.code, outputs
+            # Process the output in order of prompts
+            processed_lines = set()
+            for prompt_line in prompt_lines:
+                if input_idx < len(input_lines):
+                    # Add the prompt
+                    formatted_result.append(prompt_line)
+                    # Add the user input
+                    formatted_result.append(input_lines[input_idx])
+                    processed_lines.add(prompt_line)
+                    input_idx += 1
             
-            for input_data in self.test_inputs:
-                # Command to run the compiled program
-                run_prefix = "./" if platform.system() != "Windows" else ""
-                run_cmd = f"{run_prefix}{os.path.basename(exe_path)}"
+            # Add any remaining output lines that aren't prompts
+            for line in output_lines:
+                if line not in processed_lines and line.strip():
+                    formatted_result.append(line)
+            
+            return result + "\n".join(formatted_result)
+        
+        return result + self.stdout
+
+class CodeRunner:
+    """Runs code in various programming languages."""
+    
+    def __init__(self, temp_dir: Optional[str] = None):
+        """Initialize with an optional temp directory."""
+        self.temp_dir = temp_dir or tempfile.mkdtemp()
+    
+    def _save_code_to_file(self, code: str, filename: str) -> str:
+        """Save code to a file.
+        
+        Args:
+            code: The source code
+            filename: The filename to save to
+            
+        Returns:
+            The full path to the saved file
+        """
+        file_path = os.path.join(self.temp_dir, filename)
+        with open(file_path, "w") as f:
+            f.write(code)
+        return file_path
+    
+    def _run_process(self, 
+                    command: List[str], 
+                    input_data: str, 
+                    timeout: int = 10) -> ExecutionResult:
+        """Run a subprocess with the given command and input.
+        
+        Args:
+            command: The command to run as a list
+            input_data: Input data to feed to the process
+            timeout: Maximum execution time in seconds
+            
+        Returns:
+            ExecutionResult object with the results
+        """
+        cmd_str = " ".join(command)
+        
+        try:
+            process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            stdout, stderr = process.communicate(input=input_data, timeout=timeout)
+            return ExecutionResult(command=cmd_str, stdout=stdout.strip(), stderr=stderr.strip())
+            
+        except subprocess.TimeoutExpired:
+            return ExecutionResult(command=cmd_str, stdout="", timed_out=True)
+        except Exception as e:
+            return ExecutionResult(command=cmd_str, stdout="", error=str(e))
+    
+    def run_python(self, 
+                   code: str, 
+                   test_case: TestCase, 
+                   filename: str = "solution.py") -> ExecutionResult:
+        """Run Python code with the given input.
+        
+        Args:
+            code: The Python code to run
+            test_case: The test case to use
+            filename: The filename to save the code to
+            
+        Returns:
+            ExecutionResult with the execution results
+        """
+        file_path = self._save_code_to_file(code, filename)
+        
+        # If file handling is required, ensure file path is set
+        if test_case.requires_file and test_case.file_path:
+            # Use the file name as is - since we standardized the names when uploading
+            # This ensures the code can find "data.txt", "data1.txt", etc.
+            dest_path = os.path.join(self.temp_dir, os.path.basename(test_case.file_path))
+            
+            with open(test_case.file_path, 'rb') as src, open(dest_path, 'wb') as dst:
+                dst.write(src.read())
+        
+        # Run the code
+        command = ["python", file_path]
+        return self._run_process(command, test_case.inputs)
+    
+    def run_cpp(self, 
+                code: str, 
+                test_case: TestCase, 
+                filename: str = "solution.cpp") -> Tuple[ExecutionResult, Optional[ExecutionResult]]:
+        """Run C/C++ code with the given input.
+        
+        Args:
+            code: The C/C++ code to run
+            test_case: The test case to use
+            filename: The filename to save the code to
+            
+        Returns:
+            Tuple of (compilation result, execution result)
+        """
+        file_path = self._save_code_to_file(code, filename)
+        
+        # Determine executable name
+        exe_name = os.path.splitext(filename)[0]
+        if platform.system() == "Windows":
+            exe_name += ".exe"
+        
+        exe_path = os.path.join(self.temp_dir, exe_name)
+        
+        # If file handling is required, ensure file path is set
+        if test_case.requires_file and test_case.file_path:
+            # Copy the file to the temp directory
+            file_name = os.path.basename(test_case.file_path)
+            dest_path = os.path.join(self.temp_dir, file_name)
+            
+            with open(test_case.file_path, 'rb') as src, open(dest_path, 'wb') as dst:
+                dst.write(src.read())
+        
+        # Compile the code
+        compile_command = ["g++", file_path, "-o", exe_path]
+        compile_result = self._run_process(compile_command, "")
+        
+        # If compilation failed, return only the compilation result
+        if compile_result.stderr or compile_result.error:
+            return compile_result, None
+        
+        # Run the executable
+        run_command = [exe_path]
+        if platform.system() != "Windows":
+            run_command[0] = "./" + exe_name
+        
+        run_result = self._run_process(run_command, test_case.inputs)
+        
+        # For C++, we need to combine compilation and execution
+        if run_result.error or run_result.stderr:
+            # If execution failed, format the error but still include compilation info
+            combined_result = ExecutionResult(
+                command=run_command[0],
+                stdout="",
+                stderr=f"Compilation successful but execution failed: {run_result.error or run_result.stderr}",
+                error=run_result.error
+            )
+            return None, combined_result
+        
+        return compile_result, run_result
+
+class CodeExecutor:
+    """Main class to execute code and manage results."""
+    
+    def __init__(self, code_content: str, assignment_type: str):
+        """Initialize with the code content and assignment type.
+        
+        Args:
+            code_content: The full response from Gemini API
+            assignment_type: The programming language (python, cpp, c)
+        """
+        self.code_content = code_content
+        self.assignment_type = assignment_type
+        self.programs = CodeParser.extract_code_and_inputs(code_content, assignment_type)
+        self.runner = CodeRunner()
+    
+    def execute_code(self, 
+                     working_dir: str, 
+                     file_paths: Optional[List[str]] = None) -> Tuple[List[str], List[List[str]]]:
+        """Execute all programs with their test cases.
+        
+        Args:
+            working_dir: The current working directory (for display)
+            file_paths: Optional list of file paths for file handling test cases
+            
+        Returns:
+            Tuple of (code list, output list for all programs)
+        """
+        all_codes = []
+        all_outputs = []
+        
+        # Add file paths to test cases if provided
+        if file_paths:
+            file_idx = 0
+            for program in self.programs:
+                for test_case in program.test_cases:
+                    if test_case.requires_file and file_idx < len(file_paths):
+                        test_case.file_path = file_paths[file_idx]
+                        file_idx += 1
+        
+        # Execute each program
+        for i, program in enumerate(self.programs):
+            program_outputs = []
+            all_codes.append(program.code)
+            
+            for j, test_case in enumerate(program.test_cases):
+                filename = f"solution_{i}.{program.language.value}"
                 
-                result = self._execute_compiled_code(exe_path, input_data, cwd, run_cmd)
-                outputs.append(compile_output + result)
+                if program.language == LanguageType.PYTHON:
+                    result = self.runner.run_python(program.code, test_case, filename)
+                    program_outputs.append(result.format_output(working_dir, test_case.inputs))
+                    
+                elif program.language in [LanguageType.CPP, LanguageType.C]:
+                    compile_result, run_result = self.runner.run_cpp(program.code, test_case, filename)
+                    
+                    if run_result:
+                        # Only show the execution output without compilation details
+                        program_outputs.append(run_result.format_output(working_dir, test_case.inputs))
+                    else:
+                        # Compilation error
+                        program_outputs.append(f"Compilation Error: {compile_result.stderr}")
             
-            return self.code, outputs
+            all_outputs.append(program_outputs)
+        
+        return all_codes, all_outputs
