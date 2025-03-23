@@ -121,6 +121,7 @@ class ExecutionResult:
         self.timed_out = timed_out
         self.error = error
     
+
     def format_output(self, working_dir: str, input_data: str = "") -> str:
         """Format the execution result to look like a natural command-line interaction.
         
@@ -131,8 +132,19 @@ class ExecutionResult:
         Returns:
             Formatted output string showing a natural command line interaction
         """
+        # Simplify the command display - extract just the solution_X.py part
+        command_display = self.command
+        
+        # Replace the full path with just the simple filename pattern
+        if "solution_" in command_display:
+            # Extract just the solution_X.py part from the full command
+            filename_match = re.search(r'solution_\d+\.\w+', command_display)
+            if filename_match:
+                simple_filename = filename_match.group(0)
+                command_display = f"python {simple_filename}"
+        
         # Start with the command prompt with working directory
-        result = f"{working_dir}> {self.command}\n"
+        result = f"{working_dir}> {command_display}\n"
         
         if self.timed_out:
             return result + "Execution timed out after 10 seconds"
@@ -143,41 +155,36 @@ class ExecutionResult:
         if self.stderr:
             return result + self.stderr
         
-        # Format to match your desired pattern: input prompt > input > outputs
+        # Format to match the desired pattern: command > prompt > input > outputs
         if input_data:
-            input_lines = input_data.split('\n')
-            output_lines = self.stdout.split('\n')
-            formatted_result = []
+            # Split the input into lines
+            input_lines = input_data.strip().split('\n')
+            # Split the stdout into lines
+            output_lines = self.stdout.strip().split(': ')
+            
+            # Build the formatted result
+            formatted_output = []
             input_idx = 0
             
-            # First, collect all the prompt lines
-            prompt_lines = []
+            # Loop through output lines to find input prompts
             for line in output_lines:
-                if any(prompt.lower() in line.lower() for prompt in ["Enter", "Input", "Please", "Type", "Provide"]):
-                    prompt_lines.append(line)
-            
-            # If no prompts found, just return the raw output
-            if not prompt_lines:
-                return result + self.stdout
-            
-            # Process the output in order of prompts
-            processed_lines = set()
-            for prompt_line in prompt_lines:
-                if input_idx < len(input_lines):
+                # Check if this line is a prompt for input
+                if any(prompt.lower() in line.lower() for prompt in ["enter", "input", "please", "type", "provide"]):
                     # Add the prompt
-                    formatted_result.append(prompt_line)
-                    # Add the user input
-                    formatted_result.append(input_lines[input_idx])
-                    processed_lines.add(prompt_line)
-                    input_idx += 1
-            
-            # Add any remaining output lines that aren't prompts
-            for line in output_lines:
-                if line not in processed_lines and line.strip():
-                    formatted_result.append(line)
-            
-            return result + "\n".join(formatted_result)
+                    formatted_output.append(line + ": ")
+                    
+                    # Add the corresponding user input if available
+                    if input_idx < len(input_lines):
+                        formatted_output.append(input_lines[input_idx])
+                        input_idx += 1
+                else:
+                    # Add non-prompt output line
+                    formatted_output.append(line)
+
+            # Join all the lines and return
+            return result + "\n".join(formatted_output)
         
+        # If no input data, just return the standard output
         return result + self.stdout
 
 class CodeRunner:
@@ -224,7 +231,8 @@ class CodeRunner:
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                cwd=self.temp_dir  # Set the working directory to temp_dir
             )
             
             stdout, stderr = process.communicate(input=input_data, timeout=timeout)
@@ -253,15 +261,20 @@ class CodeRunner:
         
         # If file handling is required, ensure file path is set
         if test_case.requires_file and test_case.file_path:
-            # Use the file name as is - since we standardized the names when uploading
-            # This ensures the code can find "data.txt", "data1.txt", etc.
-            dest_path = os.path.join(self.temp_dir, os.path.basename(test_case.file_path))
+            # Always use data.txt as the standardized name - simply copy to temp_dir
+            # Don't change the name - just copy the file
+            with open(test_case.file_path, 'rb') as src:
+                file_content = src.read()
             
-            with open(test_case.file_path, 'rb') as src, open(dest_path, 'wb') as dst:
-                dst.write(src.read())
+            # Write to data.txt in the same directory as the code
+            dest_path = os.path.join(self.temp_dir, "data.txt")
+            with open(dest_path, 'wb') as dst:
+                dst.write(file_content)
+                
+            print(f"Copied test file to {dest_path}")
         
         # Run the code
-        command = ["python", file_path]
+        command = ["python", filename]  # Use relative path since we set cwd
         return self._run_process(command, test_case.inputs)
     
     def run_cpp(self, 
@@ -289,12 +302,15 @@ class CodeRunner:
         
         # If file handling is required, ensure file path is set
         if test_case.requires_file and test_case.file_path:
-            # Copy the file to the temp directory
-            file_name = os.path.basename(test_case.file_path)
-            dest_path = os.path.join(self.temp_dir, file_name)
+            # Always use data.txt as the standardized name in the same directory
+            with open(test_case.file_path, 'rb') as src:
+                file_content = src.read()
             
-            with open(test_case.file_path, 'rb') as src, open(dest_path, 'wb') as dst:
-                dst.write(src.read())
+            dest_path = os.path.join(self.temp_dir, "data.txt")
+            with open(dest_path, 'wb') as dst:
+                dst.write(file_content)
+                
+            print(f"Copied test file to {dest_path}")
         
         # Compile the code
         compile_command = ["g++", file_path, "-o", exe_path]
@@ -305,9 +321,7 @@ class CodeRunner:
             return compile_result, None
         
         # Run the executable
-        run_command = [exe_path]
-        if platform.system() != "Windows":
-            run_command[0] = "./" + exe_name
+        run_command = [exe_path] if platform.system() == "Windows" else [f"./{exe_name}"]
         
         run_result = self._run_process(run_command, test_case.inputs)
         
@@ -327,17 +341,19 @@ class CodeRunner:
 class CodeExecutor:
     """Main class to execute code and manage results."""
     
-    def __init__(self, code_content: str, assignment_type: str):
+    def __init__(self, code_content: str, assignment_type: str, temp_dir: str = None):
         """Initialize with the code content and assignment type.
         
         Args:
             code_content: The full response from Gemini API
             assignment_type: The programming language (python, cpp, c)
+            temp_dir: Optional temporary directory to use
         """
         self.code_content = code_content
         self.assignment_type = assignment_type
         self.programs = CodeParser.extract_code_and_inputs(code_content, assignment_type)
-        self.runner = CodeRunner()
+        self.temp_dir = temp_dir or tempfile.mkdtemp()
+        self.runner = CodeRunner(self.temp_dir)
     
     def execute_code(self, 
                      working_dir: str, 

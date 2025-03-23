@@ -32,19 +32,25 @@ class GeminiAPI:
         if requires_file_handling:
             file_handling_instructions = """
             This problem requires file handling. Your solution should:
-            1. Read from a file with a STANDARDIZED NAME: "data.txt" for a single file or "data0.txt", "data1.txt", etc. for multiple files
+            1. Read from a file named EXACTLY "data.txt"
             2. Process the data from the file according to the problem statement
             3. Output the results according to the problem statement
             
-            IMPORTANT: Your code must use the EXACT FILENAME "data.txt" (or "data0.txt", "data1.txt", etc. for multiple programs) 
-            to open and read the file. The user uploads their own file but our system renames it to this standardized name.
+            IMPORTANT: Your code must use the EXACT FILENAME "data.txt" to open and read the file. Do not use any path, just the filename directly.
             
-            Example:
+            Example for Python:
             ```python
             # Open the file using the standardized name
-            with open("data.txt", "r") as file:
-                # Process the file
-                lines = file.readlines()
+            file = open("data.txt", "r")
+            lines = file.readlines()
+            file.close()
+            ```
+            
+            Example for C++:
+            ```cpp
+            FILE* file = fopen("data.txt", "r");
+            // Read from file
+            fclose(file);
             ```
             
             Add a FILE_REQUIRED marker at the beginning of your response, before the first code block:
@@ -58,15 +64,27 @@ class GeminiAPI:
         prompt = f"""
         Please generate a {assignment_type} program to solve the following problem statement: '{problem_statement}'.
 
-        The {assignment_type} program MUST meet these requirements:
+        The {assignment_type} program MUST meet these STRICT requirements:
 
-        1.  **Input Handling:**  It must include an input prompt to receive multiple numerical inputs on a single line, for example, like this: '12 48 32'.  (It MUST use `.split()` and then `int()` with multiple assignment to convert these inputs into respective variables for python) (For C++ only one input prompt to user is enough because it can accept input with spaces normally)
-        2.  **String Input Compatibility:** If the problem statement involves string inputs, the program should handle them appropriately.
-        3.  **Problem Solving Functions:**  The program must call functions that directly address and solve the problem described in the problem statement.
-        4.  **Output Display:**  The program must display the output that is returned from these function calls.
-        5.  **Code Style:**  Apply necessary comments and adhere to good coding practices.
-        6.  **Docstrings:** Include a concise, one-liner docstring for each function to explain its purpose.
-        7.  **Multiple Programs:** If there are multiple programs in a single problem statement, make multiple code snippets for each program. All programs should come first, then the respective test inputs in their own code blocks.
+        1. **BEGINNER LEVEL CODE ONLY**: Write code as if for a first-year undergraduate student who is just learning to program.
+
+        2. **SIMPLICITY IS ESSENTIAL**:
+           - DO NOT use try/except blocks
+           - DO NOT use if __name__ == "__main__" structures
+           - For C++, DO NOT use <vector>, <algorithm>, or any STL containers
+           - Use only the most basic control structures (if/else, for loops, while loops)
+           - Avoid complex data structures - stick to arrays and simple variables
+
+        3. **Input Handling**: For Python, ask the user to input numbers separated by spaces like this:
+           ```python
+           input_str = input("Enter numbers separated by spaces: ")
+           numbers = [int(x) for x in input_str.split()]
+           ```
+           For C++, use simple cin for input.
+
+        4. **Problem Solving**: Break down the solution into simple steps with comments.
+
+        5. **NO ADVANCED TECHNIQUES**: Avoid lambdas, list comprehensions, or any feature that wouldn't be taught in the first semester.
         {file_handling_instructions}
         
         Furthermore, you need to generate two valid sets of test inputs that are logically consistent with the code. Present these test inputs in this specific format:
@@ -78,7 +96,7 @@ class GeminiAPI:
         TEST_END
         ```
         
-        NOTE: If the program requires file handling, test inputs might be empty or might only include inputs AFTER the file is read. The system handles file uploads separately. For example, if your program first reads data.txt and then asks for user input, only include the user input part in the test inputs.
+        NOTE: If the program requires file handling, test inputs might be empty or might only include inputs AFTER the file is read. The system handles file uploads separately.
         There must be a newline between each test case.
         
         Your ENTIRE output MUST be formatted as follows, and contain NOTHING else: 
@@ -97,21 +115,10 @@ class GeminiAPI:
         TEST_END
         ```
 
-        ```
-        TEST_START
-        [generated test inputs for code 1 second set]
-
-        [generated test inputs for code 2 second set]
-        TEST_END
-        ```
-
         ENSURE YOU HAVE GENERATED SEPARATE PROGRAMS FOR SEPARATE PROBLEM STATEMENTS. 
         Ensure your response contains only the code and test inputs - no explanations or extra text.
         Test inputs must be practical examples that effectively test your code's functionality.
         For problems requiring multiple programs, provide separate code and test inputs for each.
-        Keep the code at a first-year undergraduate level - accept user inputs but avoid advanced libraries and complex approaches.
-        Use only basic libraries (iostream for C++ is acceptable). Prefer simple procedural solutions without classes.
-        DO NOT USE VECTOR OR ALGORITHM HEADERS.
         """
         
         response = self.model.generate_content(prompt)

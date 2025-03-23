@@ -14,11 +14,21 @@ from code_executor import CodeExecutor, TestCase
 from markdown_generator import MarkdownGenerator, WriteupFormatter
 from markdown_to_pdf import MarkdownToPDF
 
+# Create a global temporary directory for the session
+def get_session_temp_dir():
+    """Get or create a temporary directory for the current session."""
+    if "temp_dir" not in st.session_state:
+        st.session_state.temp_dir = tempfile.mkdtemp()
+    return st.session_state.temp_dir
+
 # Main application function
 def main():
     """Main function to run the Streamlit application."""
     # Initialize session state
     init_session_state()
+    
+    # Create a common temporary directory for this session
+    temp_dir = get_session_temp_dir()
     
     # Render header
     render_header()
@@ -31,8 +41,8 @@ def main():
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
     if uploaded_file is not None:
-        # Save the uploaded file temporarily
-        pdf_path = save_uploaded_file(uploaded_file)
+        # Save the uploaded file to the session temp directory
+        pdf_path = save_uploaded_file(uploaded_file, temp_dir=temp_dir)
         
         # Render file handling section if needed
         requires_file_handling, test_files = render_file_handling_section()
@@ -43,7 +53,8 @@ def main():
                 pdf_path, 
                 student_info, 
                 requires_file_handling,
-                test_files
+                test_files,
+                temp_dir
             )
     
     # Display results if processing is complete
@@ -148,6 +159,10 @@ def render_footer():
 # Initialize session state variables
 def init_session_state():
     """Initialize session state variables if they don't exist."""
+    # Add temp_dir to the session state initialization
+    if "temp_dir" not in st.session_state:
+        st.session_state.temp_dir = tempfile.mkdtemp()
+    
     if "show_success" not in st.session_state:
         st.session_state.show_success = False
     
@@ -235,16 +250,21 @@ def render_student_info_section() -> Dict[str, str]:
     
     return student_info
 
-def save_uploaded_file(uploaded_file, index: int = None) -> str:
+def save_uploaded_file(uploaded_file, temp_dir=None, index: int = None) -> str:
     """Save an uploaded file to a temporary location and return the path.
     
     Args:
         uploaded_file: The uploaded file object
+        temp_dir: The temporary directory to save to (uses session temp dir if None)
         index: Optional index for naming files for file handling tests
         
     Returns:
         Path to the saved file
     """
+    # Use the provided temp_dir or default to session's temp_dir
+    if temp_dir is None:
+        temp_dir = st.session_state.temp_dir
+    
     # For file handling tests, use standardized names (data.txt, data1.txt, etc.)
     if index is not None:
         # Get the file extension from the original file
@@ -253,7 +273,6 @@ def save_uploaded_file(uploaded_file, index: int = None) -> str:
         ext = ext if ext else ".txt"
         # Create standardized filename (data.txt, data1.txt, data2.txt, etc.)
         filename = f"data{index if index > 0 else ''}{ext}"
-        temp_dir = tempfile.gettempdir()
         file_path = os.path.join(temp_dir, filename)
         
         # Write the file content
@@ -262,16 +281,18 @@ def save_uploaded_file(uploaded_file, index: int = None) -> str:
         
         return file_path
     else:
-        # For other files like PDFs, use a generic temp file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-            tmp_file.write(uploaded_file.getvalue())
-            return tmp_file.name
+        # For other files like PDFs, save to the temp directory
+        file_path = os.path.join(temp_dir, uploaded_file.name)
+        with open(file_path, 'wb') as f:
+            f.write(uploaded_file.getvalue())
+        return file_path
 
 def process_assignment(
     pdf_path: str, 
     student_info: Dict[str, str], 
     requires_file_handling: bool = False,
-    test_files: List[Any] = None
+    test_files: List[Any] = None,
+    temp_dir: str = None
 ) -> bool:
     """Process the assignment and return whether it was successful.
     
@@ -280,10 +301,15 @@ def process_assignment(
         student_info: Dictionary containing student information
         requires_file_handling: Whether the assignment requires file handling
         test_files: List of uploaded test files for file handling
+        temp_dir: The temporary directory to use
         
     Returns:
         True if processing was successful, False otherwise
     """
+    # Use provided temp_dir or default to session's temp_dir
+    if temp_dir is None:
+        temp_dir = st.session_state.temp_dir
+    
     # Initialize progress tracking
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -321,31 +347,29 @@ def process_assignment(
         file_paths = []
         if test_files:
             for i, file in enumerate(test_files):
-                file_path = save_uploaded_file(file, index=i)
+                file_path = save_uploaded_file(file, temp_dir=temp_dir, index=i)
                 file_paths.append(file_path)
                 
             # Display information about renamed files
-            st.info(f"Test files have been renamed to: {', '.join([os.path.basename(path) for path in file_paths])}")
-            st.info("Your code will access these files using these standard names.")
-
+            # st.info(f"Test files have been renamed to: {', '.join([os.path.basename(path) for path in file_paths])}")
+            # st.info(f"Files saved in: {temp_dir}")
         
         # Step 3: Execute the code
         status_text.text("Executing code with test inputs...")
-        code_executor = CodeExecutor(code_response, assignment_type)
+        code_executor = CodeExecutor(code_response, assignment_type, temp_dir=temp_dir)
         working_dir = f"C:\\Users\\{student_info['name']}\\Desktop\\programs"
         code, outputs = code_executor.execute_code(working_dir, file_paths)
         progress_bar.progress(60)
         
         # Step 4: Generate theoretical writeup
         status_text.text("Generating theoretical writeup using Gemini...")
-        # writeup_response = gemini.generate_writeup(
-        #     theory_points, 
-        #     code_response, 
-        #     assignment_number, 
-        #     problem_statement, 
-        #     assignment_type
-        # )
-        writeup_response = "# No write up for debugging"
+        writeup_response = gemini.generate_writeup(
+            theory_points, 
+            code_response, 
+            assignment_number, 
+            problem_statement, 
+            assignment_type
+        )
         progress_bar.progress(70)
         
         # Step 5: Generate markdown and PDF
@@ -363,15 +387,15 @@ def process_assignment(
         
         filename = f"{student_info['prn']}_{student_info['name'].split(' ')[0]}_{student_info['batch']}.pdf"
 
-        # Save markdown to temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.md') as tmp_md:
-            upload_pdf_content = markdown_gen.generate_upload_markdown()
-            tmp_md.write(upload_pdf_content.encode())
-            markdown_path = tmp_md.name
+        # Save markdown to temporary file in the session temp directory
+        markdown_path = os.path.join(temp_dir, "output.md")
+        upload_pdf_content = markdown_gen.generate_upload_markdown()
+        with open(markdown_path, "w") as f:
+            f.write(upload_pdf_content)
         
         # Convert markdown to PDF
         md_to_pdf = MarkdownToPDF()
-        pdf_output_path = os.path.join(tempfile.gettempdir(), filename)
+        pdf_output_path = os.path.join(temp_dir, filename)
         
         md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
         with open(pdf_output_path, "rb") as pdf_file:
@@ -392,16 +416,8 @@ def process_assignment(
         st.session_state.assignment_number = assignment_number
         st.session_state.filename = filename
         
-        # Clean up temporary files
-        try:
-            os.unlink(pdf_path)
-            os.unlink(markdown_path)
-            os.unlink(pdf_output_path)
-            # Clean up test files if any
-            for path in file_paths:
-                os.unlink(path)
-        except Exception as e:
-            st.warning(f"Error cleaning up temporary files: {str(e)}")
+        # Note: We don't clean up temporary files as we're now using a session-wide temp dir
+        # They'll be cleaned up when the session ends or the app is restarted
         
         return True
         
