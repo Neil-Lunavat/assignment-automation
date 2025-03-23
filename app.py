@@ -146,15 +146,29 @@ def render_footer():
     """Render the application footer."""
     st.markdown("---")
     st.markdown("© 2025 Assignment Automation Tool | Made by [Neil](https://www.linkedin.com/in/neil-lunavat) with ❤️")
-    st.markdown("""
-    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-        <a href="https://www.buymeacoffee.com/neil3196" target="_blank">
-            <button style="background-color: #7765E3; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
-                Buy me a Predator 🐺
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
+    
+    # Define the dialog function that will show the QR code
+    @st.dialog("Support My Work")
+    def show_qr_code():
+        st.subheader("Scan to send a donation")
+        qr_image_path = "assets/upi_qr.png"
+            
+        # Display the image if it exists
+        with open(qr_image_path, "rb") as img_file:
+            img_bytes = img_file.read()
+            img_b64 = base64.b64encode(img_bytes).decode()
+            st.markdown(f"""
+                <div style="display: flex; justify-content: center;">
+                    <img src="data:image/png;base64,{img_b64}" width="300" alt="UPI QR Code">
+                </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("*Thank you for supporting! More AI tools coming up to steamroll your degree.*")
+
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        if st.button("Buy me a Predator 🐺", type="primary", key="donate_button", use_container_width=True):
+            show_qr_code()
 
 # Initialize session state variables
 def init_session_state():
