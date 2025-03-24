@@ -4,13 +4,13 @@ import tempfile
 import base64
 from dotenv import load_dotenv
 import extra_streamlit_components as stx
-from typing import Dict, List, Any, Tuple, Optional
-import pandas as pd
+from typing import Dict, List, Any
+from email_sender import send_feedback_email
 
 # Load local modules
 from pdf_parser import PDFParser
 from gemini_api import GeminiAPI
-from code_executor import CodeExecutor, TestCase
+from code_executor import CodeExecutor
 from markdown_generator import MarkdownGenerator, WriteupFormatter
 from markdown_to_pdf import MarkdownToPDF
 
@@ -164,9 +164,38 @@ def render_footer():
             """, unsafe_allow_html=True)
 
         st.markdown("*Thank you for supporting! More AI tools coming up to steamroll your degree.*")
+    
+    @st.dialog("Send Feedback")
+    def show_feedback_dialog():
+        st.write("Share your thoughts, report bugs, or suggest features!")
+        
+        name = st.text_input("Your Name")
+        message = st.text_area("Your Message", height=150)
+        
+        if st.button("Send", type="primary", key="submit_button", use_container_width=True):
+            if name and message:
+                # Show a loading spinner while sending the email
+                with st.spinner("Sending feedback..."):
+                    success, msg = send_feedback_email(name, message)
+                
+                if success:
+                    st.success(f"Thanks {name}! Your feedback has been sent.")
+                    return True
+                else:
+                    st.error(f"Error sending feedback: {msg}")
+                    return False
+            else:
+                st.error("Please fill in all fields.")
+                return False
 
-    col1, col2 = st.columns([4, 1])
-    with col2:
+    # Create a row with two buttons
+    col1, _, col3 = st.columns([1, 3, 1])
+    
+    with col1:
+        if st.button("Send Feedback 💬", type="primary", key="feedback_button", use_container_width=True):
+            show_feedback_dialog()
+    
+    with col3:
         if st.button("Buy me a Predator 🐺", type="primary", key="donate_button", use_container_width=True):
             show_qr_code()
 
@@ -188,6 +217,9 @@ def init_session_state():
     
     if "uploaded_test_files" not in st.session_state:
         st.session_state.uploaded_test_files = []
+    
+    if "show_feedback_form" not in st.session_state:
+        st.session_state.show_feedback_form = False
 
 def get_student_info() -> Dict[str, str]:
     """Get student information from cookies or create empty defaults."""
