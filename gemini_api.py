@@ -74,6 +74,7 @@ class GeminiAPI:
            - For C++, DO NOT use <vector>, <algorithm>, or any STL containers
            - Use only the most basic control structures (if/else, for loops, while loops)
            - Avoid complex data structures - stick to arrays and simple variables
+           - Write sorting, algorithms etc. from scratch
 
         3. **Input Handling**: For Python, ask the user to input numbers separated by spaces like this:
            ```python
@@ -84,7 +85,7 @@ class GeminiAPI:
 
         4. **Problem Solving**: Break down the solution into simple steps with comments.
 
-        5. **NO ADVANCED TECHNIQUES**: Avoid lambdas, list comprehensions, or any feature that wouldn't be taught in the first semester.
+        5. **NO ADVANCED TECHNIQUES**: Avoid lambdas, list comprehensions, or any feature that wouldn't be taught in the first year.
         {file_handling_instructions}
         
         Furthermore, you need to generate two valid sets of test inputs that are logically consistent with the code. Present these test inputs in this specific format:
@@ -119,6 +120,7 @@ class GeminiAPI:
         Ensure your response contains only the code and test inputs - no explanations or extra text.
         Test inputs must be practical examples that effectively test your code's functionality.
         For problems requiring multiple programs, provide separate code and test inputs for each.
+        ENSURE THE CODE GENERATED WORKS WITHOUT ERRORS. 
         """
         
         response = self.model.generate_content(prompt)
