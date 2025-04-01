@@ -41,20 +41,29 @@ class PDFParser:
         Analyze the following assignment text and extract these specific details:
         1. Assignment Type: Determine if this is a Python, C++, C or other type of assignment
         2. Assignment Number: Extract the assignment number
-        3. Problem Statement: Extract the full problem statement
+        3. Problem Statement: Extract the full problem statement INCLUDING any objectives and algorithms if present
         4. Theory Points: Extract all theory points as a list
+        5. File Handling: Determine if the assignment requires file handling (reading from or writing to files)
+
+        For the problem statement, make sure to include:
+        - The main problem description
+        - Any stated objectives or goals
+        - Any algorithm descriptions or pseudocode
+        - Any input/output format specifications
+        - Any constraints or requirements
 
         Format your response EXACTLY as follows (with no other text):
         ```json
         {{
             "assignment_type": "python or cpp or c or other",
             "assignment_number": "number or Unknown if not found",
-            "problem_statement": "full problem statement",
+            "problem_statement": "full problem statement with objectives and algorithms",
             "theory_points": [
                 "theory point 1",
                 "theory point 2",
                 "etc..."
-            ]
+            ],
+            "requires_file_handling": true or false
         }}
         ```
 
@@ -77,12 +86,14 @@ class PDFParser:
                 self.assignment_number = parsed_data.get("assignment_number", "")
                 self._problem_statement = parsed_data.get("problem_statement", "Could not extract problem statement")
                 self._theory_points = parsed_data.get("theory_points", ["Could not extract theory points"])
+                self._requires_file_handling = parsed_data.get("requires_file_handling", False)
             else:
                 # Fallback to defaults if JSON parsing fails
                 self.assignment_type = "python"
                 self.assignment_number = ""
                 self._problem_statement = "Could not extract problem statement"
                 self._theory_points = ["Could not extract theory points"]
+                self._requires_file_handling = False
                 
         except Exception as e:
             print(f"Error parsing with Gemini: {str(e)}")
@@ -91,6 +102,7 @@ class PDFParser:
             self.assignment_number = ""
             self._problem_statement = "Could not extract problem statement"
             self._theory_points = ["Could not extract theory points"]
+            self._requires_file_handling = False
             
     def extract_problem_statement(self):
         """Return the extracted problem statement."""
@@ -103,3 +115,7 @@ class PDFParser:
     def extract_assignment_number(self):
         """Return the extracted assignment number."""
         return self.assignment_number if self.assignment_number != "Unknown" else ""
+    
+    def requires_file_handling(self):
+        """Return whether the assignment requires file handling."""
+        return self._requires_file_handling

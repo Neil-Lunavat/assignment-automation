@@ -7,6 +7,9 @@ from typing import List, Tuple, Dict, Union, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
+# Import the enhanced execution result class
+from output_formatter import EnhancedExecutionResult
+
 class LanguageType(Enum):
     """Enum for supported programming languages."""
     PYTHON = "python"
@@ -70,15 +73,18 @@ class CodeParser:
         # Process test blocks to get individual test cases
         input_blocks = []
         for block in test_blocks:
-            input_blocks.append(block.strip().split('\n\n'))
+            # Split by newlines and remove empty lines
+            test_cases = [line.strip() for line in block.strip().split('\n') if line.strip()]
+            # Limit to exactly 2 test cases per program
+            input_blocks.append(test_cases[:2])
         
         # If no test blocks found, create empty test case
         if not input_blocks:
-            input_blocks = [[""]]
+            input_blocks = [["", ""]]  # Two empty test cases
         
         # Ensure we have enough test cases for each code block
         if len(code_blocks) > len(input_blocks):
-            last_input = input_blocks[-1] if input_blocks else [""]
+            last_input = input_blocks[-1] if input_blocks else ["", ""]
             input_blocks.extend([last_input] * (len(code_blocks) - len(input_blocks)))
         elif len(input_blocks) > len(code_blocks):
             input_blocks = input_blocks[:len(code_blocks)]
@@ -106,87 +112,6 @@ class CodeParser:
         
         return programs
 
-class ExecutionResult:
-    """Class to store and format execution results."""
-    
-    def __init__(self, 
-                 command: str, 
-                 stdout: str, 
-                 stderr: str = "", 
-                 timed_out: bool = False, 
-                 error: str = ""):
-        self.command = command
-        self.stdout = stdout
-        self.stderr = stderr
-        self.timed_out = timed_out
-        self.error = error
-    
-
-    def format_output(self, working_dir: str, input_data: str = "") -> str:
-        """Format the execution result to look like a natural command-line interaction.
-        
-        Args:
-            working_dir: The current working directory
-            input_data: The input data that was provided
-            
-        Returns:
-            Formatted output string showing a natural command line interaction
-        """
-        # Simplify the command display - extract just the solution_X.py part
-        command_display = self.command
-        
-        # Replace the full path with just the simple filename pattern
-        if "solution_" in command_display:
-            # Extract just the solution_X.py part from the full command
-            filename_match = re.search(r'solution_\d+\.\w+', command_display)
-            if filename_match:
-                simple_filename = filename_match.group(0)
-                command_display = f"python {simple_filename}"
-        
-        # Start with the command prompt with working directory
-        result = f"{working_dir}> {command_display}\n"
-        
-        if self.timed_out:
-            return result + "Execution timed out after 10 seconds"
-        
-        if self.error:
-            return result + f"Error: {self.error}"
-        
-        if self.stderr:
-            return result + self.stderr
-        
-        # Format to match the desired pattern: command > prompt > input > outputs
-        if input_data:
-            # Split the input into lines
-            input_lines = input_data.strip().split('\n')
-            # Split the stdout into lines
-            output_lines = self.stdout.strip().split(': ')
-            
-            # Build the formatted result
-            formatted_output = []
-            input_idx = 0
-            
-            # Loop through output lines to find input prompts
-            for line in output_lines:
-                # Check if this line is a prompt for input
-                if any(prompt.lower() in line.lower() for prompt in ["enter", "input", "please", "type", "provide"]):
-                    # Add the prompt
-                    formatted_output.append(line + ": ")
-                    
-                    # Add the corresponding user input if available
-                    if input_idx < len(input_lines):
-                        formatted_output.append(input_lines[input_idx])
-                        input_idx += 1
-                else:
-                    # Add non-prompt output line
-                    formatted_output.append(line)
-
-            # Join all the lines and return
-            return result + "\n".join(formatted_output)
-        
-        # If no input data, just return the standard output
-        return result + self.stdout
-
 class CodeRunner:
     """Runs code in various programming languages."""
     
@@ -212,7 +137,7 @@ class CodeRunner:
     def _run_process(self, 
                     command: List[str], 
                     input_data: str, 
-                    timeout: int = 10) -> ExecutionResult:
+                    timeout: int = 10) -> EnhancedExecutionResult:
         """Run a subprocess with the given command and input.
         
         Args:
@@ -221,11 +146,15 @@ class CodeRunner:
             timeout: Maximum execution time in seconds
             
         Returns:
-            ExecutionResult object with the results
+            EnhancedExecutionResult object with the results
         """
         cmd_str = " ".join(command)
         
         try:
+            # Process pipe-separated inputs
+            inputs = input_data.split('|')
+            combined_input = '\n'.join(inputs)
+            
             process = subprocess.Popen(
                 command,
                 stdin=subprocess.PIPE,
@@ -235,18 +164,18 @@ class CodeRunner:
                 cwd=self.temp_dir  # Set the working directory to temp_dir
             )
             
-            stdout, stderr = process.communicate(input=input_data, timeout=timeout)
-            return ExecutionResult(command=cmd_str, stdout=stdout.strip(), stderr=stderr.strip())
+            stdout, stderr = process.communicate(input=combined_input, timeout=timeout)
+            return EnhancedExecutionResult(command=cmd_str, stdout=stdout.strip(), stderr=stderr.strip())
             
         except subprocess.TimeoutExpired:
-            return ExecutionResult(command=cmd_str, stdout="", timed_out=True)
+            return EnhancedExecutionResult(command=cmd_str, stdout="", timed_out=True)
         except Exception as e:
-            return ExecutionResult(command=cmd_str, stdout="", error=str(e))
+            return EnhancedExecutionResult(command=cmd_str, stdout="", error=str(e))
     
     def run_python(self, 
                    code: str, 
                    test_case: TestCase, 
-                   filename: str = "solution.py") -> ExecutionResult:
+                   filename: str = "solution.py") -> EnhancedExecutionResult:
         """Run Python code with the given input.
         
         Args:
@@ -255,7 +184,7 @@ class CodeRunner:
             filename: The filename to save the code to
             
         Returns:
-            ExecutionResult with the execution results
+            EnhancedExecutionResult with the execution results
         """
         file_path = self._save_code_to_file(code, filename)
         
@@ -280,7 +209,7 @@ class CodeRunner:
     def run_cpp(self, 
                 code: str, 
                 test_case: TestCase, 
-                filename: str = "solution.cpp") -> Tuple[ExecutionResult, Optional[ExecutionResult]]:
+                filename: str = "solution.cpp") -> Tuple[EnhancedExecutionResult, Optional[EnhancedExecutionResult]]:
         """Run C/C++ code with the given input.
         
         Args:
@@ -328,7 +257,7 @@ class CodeRunner:
         # For C++, we need to combine compilation and execution
         if run_result.error or run_result.stderr:
             # If execution failed, format the error but still include compilation info
-            combined_result = ExecutionResult(
+            combined_result = EnhancedExecutionResult(
                 command=run_command[0],
                 stdout="",
                 stderr=f"Compilation successful but execution failed: {run_result.error or run_result.stderr}",
