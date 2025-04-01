@@ -66,6 +66,9 @@ def init_session_state():
         
     if "assignment_type" not in st.session_state:
         st.session_state.assignment_type = "python"
+        
+    if "manual_input_saved" not in st.session_state:
+        st.session_state.manual_input_saved = False
 
 def render_header():
     """Render application header and help button."""
@@ -190,22 +193,25 @@ def handle_manual_input():
     """Handle manual input of problem statement and theory points."""
     st.subheader("Manual Input")
     
+    # Check if we already have valid input in the session state
+    has_existing_input = (st.session_state.problem_statement != "" or len(st.session_state.theory_points) > 0)
+    
     # Assignment number and type
     col1, col2 = st.columns(2)
     with col1:
-        st.session_state.assignment_number = st.text_input(
+        assignment_number = st.text_input(
             "Assignment Number", 
             value=st.session_state.assignment_number
         )
     with col2:
-        st.session_state.assignment_type = st.selectbox(
+        assignment_type = st.selectbox(
             "Programming Language",
             ["python", "cpp", "c"],
             index=["python", "cpp", "c"].index(st.session_state.assignment_type)
         )
     
     # Problem statement
-    st.session_state.problem_statement = st.text_area(
+    problem_statement = st.text_area(
         "Problem Statement (include objectives and algorithm if available)",
         value=st.session_state.problem_statement,
         height=200,
@@ -219,20 +225,37 @@ def handle_manual_input():
         height=200
     )
     
-    # Update theory points in session state
-    st.session_state.theory_points = [point.strip() for point in theory_input.split("\n") if point.strip()]
+    # Save button for inputs
+    if st.button("Save Assignment Details", type="primary"):
+        # Update session state with the input values
+        st.session_state.assignment_number = assignment_number
+        st.session_state.assignment_type = assignment_type
+        st.session_state.problem_statement = problem_statement
+        st.session_state.theory_points = [point.strip() for point in theory_input.split("\n") if point.strip()]
+        
+        # Check if file handling is required
+        if st.session_state.problem_statement:
+            st.session_state.requires_file_handling = check_file_handling_required(
+                st.session_state.problem_statement
+            )
+        
+        # Show success message
+        st.success("Assignment details saved successfully!")
+        
+        # Display information that has been input
+        display_extracted_info()
+        
+        # Set a flag in session state to remember we've saved
+        st.session_state.manual_input_saved = True
+        
+        return True
     
-    # Automatically check if file handling is required when problem statement changes
-    if st.session_state.problem_statement and st.session_state.problem_statement != st.session_state.get("last_problem_statement", ""):
-        st.session_state.requires_file_handling = check_file_handling_required(
-            st.session_state.problem_statement
-        )
-        st.session_state.last_problem_statement = st.session_state.problem_statement
+    # Return True if we've saved input in a previous run
+    if has_existing_input and st.session_state.get('manual_input_saved', False):
+        display_extracted_info()
+        return True
     
-    # Display information that has been input
-    display_extracted_info()
-    
-    return len(st.session_state.problem_statement) > 0 or len(st.session_state.theory_points) > 0
+    return False
 
 def display_extracted_info():
     """Display extracted or manually input information."""
