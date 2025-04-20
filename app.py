@@ -283,11 +283,61 @@ def check_file_handling_required(problem_statement):
     result = gemini.check_file_handling_required(problem_statement)
     return result
 
+def save_uploaded_file(uploaded_file, temp_dir=None, index: int = None) -> str:
+    """Save an uploaded file to a temporary location and return the path.
+    
+    Args:
+        uploaded_file: The uploaded file from Streamlit's file_uploader
+        temp_dir: Optional temporary directory
+        index: Optional index for standardized naming of test files
+        
+    Returns:
+        Path to the saved file
+    """
+    # Use the provided temp_dir or default to session's temp_dir
+    if temp_dir is None:
+        temp_dir = st.session_state.temp_dir
+    
+    # For file handling tests, use standardized names (data.txt, data1.txt, etc.)
+    if index is not None:
+        # Get the file extension from the original file
+        _, ext = os.path.splitext(uploaded_file.name)
+        # Use default .txt extension if none is provided
+        ext = ext if ext else ".txt"
+        # Create standardized filename (data.txt, data1.txt, data2.txt, etc.)
+        if index == 0:
+            # For the primary test file, use the exact name "data.txt" as expected in the code
+            filename = f"data{ext}"
+        else:
+            # For additional test files, add index
+            filename = f"data{index}{ext}"
+        
+        file_path = os.path.join(temp_dir, filename)
+        
+        # Write the file content
+        with open(file_path, 'wb') as f:
+            f.write(uploaded_file.getvalue())
+        
+        return file_path
+    else:
+        # For other files like PDFs, save to the temp directory
+        file_path = os.path.join(temp_dir, uploaded_file.name)
+        with open(file_path, 'wb') as f:
+            f.write(uploaded_file.getvalue())
+        return file_path
+
 def render_file_handling_section():
     """Render the file handling section for test files."""
     if st.session_state.requires_file_handling:
         st.subheader("File Handling")
         st.info("This assignment requires file handling. Please upload test files.")
+        
+        # Explain the file naming convention for better clarity
+        st.markdown("""
+        **Note:** The first file you upload will be saved as `data.txt` (or with its original extension), 
+        which is the expected filename in the generated code. Additional files will be named 
+        `data1.txt`, `data2.txt`, etc.
+        """)
         
         uploaded_files = st.file_uploader(
             "Upload test files", 
@@ -302,12 +352,24 @@ def render_file_handling_section():
             # Display file previews
             if len(uploaded_files) > 0:
                 for i, file in enumerate(uploaded_files):
-                    with st.expander(f"Preview: {file.name}"):
+                    # Show how each file will be saved
+                    _, ext = os.path.splitext(file.name)
+                    ext = ext if ext else ".txt"
+                    mapped_name = f"data{ext}" if i == 0 else f"data{i}{ext}"
+                    
+                    with st.expander(f"Preview: {file.name} → {mapped_name}"):
                         try:
+                            # Try to decode as text first
                             content = file.getvalue().decode('utf-8')
                             st.text_area(f"File content", value=content, height=200)
                         except UnicodeDecodeError:
-                            st.warning("Binary file - preview not available")
+                            # If binary, show file info instead
+                            file_size = len(file.getvalue())
+                            st.warning(f"Binary file - {file_size} bytes - preview not available")
+                            
+                            # Check if it's an Excel file
+                            if ext.lower() in ['.xlsx', '.xls']:
+                                st.info("Excel file detected. The code will use this file for data processing.")
             
             return True, uploaded_files
         else:
@@ -316,34 +378,6 @@ def render_file_handling_section():
     else:
         st.session_state.uploaded_test_files = []
         return True, []
-
-def save_uploaded_file(uploaded_file, temp_dir=None, index: int = None) -> str:
-    """Save an uploaded file to a temporary location and return the path."""
-    # Use the provided temp_dir or default to session's temp_dir
-    if temp_dir is None:
-        temp_dir = st.session_state.temp_dir
-    
-    # For file handling tests, use standardized names (data.txt, data1.txt, etc.)
-    if index is not None:
-        # Get the file extension from the original file
-        _, ext = os.path.splitext(uploaded_file.name)
-        # Use default .txt extension if none is provided
-        ext = ext if ext else ".txt"
-        # Create standardized filename (data.txt, data1.txt, data2.txt, etc.)
-        filename = f"data{index if index > 0 else ''}{ext}"
-        file_path = os.path.join(temp_dir, filename)
-        
-        # Write the file content
-        with open(file_path, 'wb') as f:
-            f.write(uploaded_file.getvalue())
-        
-        return file_path
-    else:
-        # For other files like PDFs, save to the temp directory
-        file_path = os.path.join(temp_dir, uploaded_file.name)
-        with open(file_path, 'wb') as f:
-            f.write(uploaded_file.getvalue())
-        return file_path
 
 def check_valid_assignment():
     """Check if the input is a valid programming assignment."""
@@ -412,6 +446,8 @@ def process_assignment(student_info, temp_dir):
             status_text.text("Executing code with test inputs...")
             code_executor = CodeExecutor(code_response, st.session_state.assignment_type, temp_dir=temp_dir)
             working_dir = f"C:\\Users\\{student_info['name']}\\Desktop\\programs"
+            
+            # Pass the file_paths to execute_code so it can use actual file contents
             code, outputs = code_executor.execute_code(working_dir, file_paths)
             progress_bar.progress(60)
         
