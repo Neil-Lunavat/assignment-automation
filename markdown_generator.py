@@ -81,7 +81,7 @@ class MarkdownGenerator:
     def save_markdown_to_file(self, filename):
         """Save the generated markdown to a file."""
         markdown = self.generate_upload_markdown()
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:  # Add encoding parameter
             f.write(markdown)
         return filename
 
@@ -112,6 +112,6 @@ class WriteupFormatter:
     def save_writeup_to_file(self, filename):
         """Save the formatted writeup to a file."""
         content = self.format_content()
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:  # Add encoding parameter
             f.write(content)
         return filename

@@ -446,9 +446,9 @@ def process_assignment(student_info, temp_dir):
         # Save markdown to temporary file in the session temp directory
         markdown_path = os.path.join(temp_dir, "output.md")
         upload_pdf_content = markdown_gen.generate_upload_markdown()
-        with open(markdown_path, "w") as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(upload_pdf_content)
-        
+ 
         # Convert markdown to PDF
         md_to_pdf = MarkdownToPDF()
         pdf_output_path = os.path.join(temp_dir, filename)

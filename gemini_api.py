@@ -17,7 +17,7 @@ class GeminiAPI:
             raise ValueError("GEMINI_API_KEY is not set in the environment")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash-preview-04-17')
         
     def _sanitize_text(self, text: str) -> str:
         """Replace problematic Unicode characters with ASCII equivalents.
@@ -222,22 +222,43 @@ class GeminiAPI:
             """
         
         prompt = f"""
-        You are an automated programming assignment solution generator. Generate a complete solution for the following {assignment_type} programming assignment problem.
+        You are an automated programming assignment solution generator for a FIRST-YEAR UNDERGRADUATE STUDENT with minimal programming experience. Generate a solution for the following {assignment_type} programming assignment problem.
         
         PROBLEM STATEMENT:
         {subproblem_prefix}{problem_statement}
 
-        Your solution must include:
+        Your solution must follow these EXTREMELY STRICT requirements for a TRUE BEGINNER-LEVEL solution:
 
-        1. CODE SOLUTION: 
-           - Write beginner-level, simple {assignment_type} code that solves the problem
-           - Use straightforward approaches suitable for a first-year student
-           - Avoid advanced features, libraries, or complex techniques
-           - Include helpful comments explaining the logic
-           - USE ONLY ASCII CHARACTERS in your code and comments - no Unicode
+        1. **ABSOLUTE FIRST-YEAR CODE ONLY**: 
+           - Write code as if by a student who just learned programming a few weeks ago
+           - Use very simple variable names (a, b, arr, num1, num2, i, j, temp, etc.)
+           - Add basic comments that explain obvious things
+           - Include inefficiencies that a beginner would make
+
+        2. **EXTREME SIMPLICITY IS MANDATORY**:
+           - For Python: NO imports except maybe 'math' if absolutely necessary
+           - For C++: ONLY use stdio.h/iostream, NO STL whatsoever - NO vector, NO algorithm, NO string, NO namespace std
+           - For C: Only use stdio.h and perhaps stdlib.h if absolutely necessary
+           - NO try/except or error handling of any kind
+           - NO functions when possible (or only 1-2 very simple ones)
+           - NO classes or object-oriented features
+           - NO if __name__ == "__main__" structures
+
+        3. **IMPLEMENT EVERYTHING FROM SCRATCH**:
+           - Write sorting algorithms manually (bubble or selection sort ONLY)
+           - Implement all string manipulation manually with loops and arrays
+           - For C++, use C-style code (arrays, printf/scanf) rather than C++ features
+           - Use basic loops and conditionals for everything
+
+        4. **ADD BEGINNER CHARACTERISTICS**:
+           - Include a few inefficient approaches (like nested loops where unnecessary)
+           - Add slightly redundant code
+           - Use simple algorithms even when better ones exist
+           - Include a few extra variables
+           - Write overly detailed comments on simple operations
            {file_handling_instructions}
 
-        2. TERMINAL SIMULATION: 
+        5. **TERMINAL SIMULATION**: 
            - Create a realistic terminal/command line simulation showing the program running
            - Show TWO complete test runs with different inputs and outputs
            - Format exactly like a real terminal session with prompts, inputs, and outputs
@@ -248,7 +269,7 @@ class GeminiAPI:
         Your response MUST follow this exact structure and format:
 
         ```{assignment_type}
-        [Your complete code solution here]
+        [Your complete beginner-level code solution here]
         ```
 
         ```
