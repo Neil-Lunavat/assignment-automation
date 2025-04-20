@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import google.generativeai as genai
 from dotenv import load_dotenv
 from typing import List, Dict, Any, Optional, Union, Tuple
@@ -17,6 +18,35 @@ class GeminiAPI:
         
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
+        
+    def _sanitize_text(self, text: str) -> str:
+        """Replace problematic Unicode characters with ASCII equivalents.
+        
+        Args:
+            text: The text to sanitize
+            
+        Returns:
+            Sanitized text with problematic characters replaced
+        """
+        # Map of problematic Unicode characters to safe ASCII replacements
+        replacements = {
+            '\u25cf': '*',  # Black circle bullet point
+            '\u2022': '*',  # Bullet point
+            '\u2023': '-',  # Triangular bullet
+            '\u2043': '-',  # Hyphen bullet
+            '\u2219': '*',  # Bullet operator
+            '\u25cb': 'o',  # White circle
+            '\u25aa': '-',  # Black small square
+            '\u25ab': '-',  # White small square
+            '\u25a0': '■',  # Black square
+            '\u25a1': '□',  # White square
+            # Add more as needed
+        }
+        
+        for char, replacement in replacements.items():
+            text = text.replace(char, replacement)
+        
+        return text
     
     def check_file_handling_required(self, problem_statement: str) -> bool:
         """Check if the problem requires file handling.
@@ -72,8 +102,8 @@ class GeminiAPI:
             print(f"Error validating assignment: {str(e)}")
             return False
     
-    def generate_code(self, problem_statement: str, assignment_type: str, requires_file_handling: bool = False) -> str:
-        """Generate code solution based on the problem statement.
+    def generate_code_and_outputs(self, problem_statement: str, assignment_type: str, requires_file_handling: bool = False) -> str:
+        """Generate code solution and terminal outputs based on the problem statement.
         
         Args:
             problem_statement: The problem statement to solve
@@ -81,21 +111,28 @@ class GeminiAPI:
             requires_file_handling: Whether the problem requires file handling
             
         Returns:
-            Generated code solution
+            Generated response with code and simulated outputs
         """
         # Parse problem statement to identify multiple subproblems
         subproblems = self._extract_subproblems(problem_statement)
         
         if not subproblems:
             # If no subproblems are identified, treat the entire statement as one problem
-            return self._generate_single_code(problem_statement, assignment_type, requires_file_handling)
+            return self._generate_code_with_outputs(problem_statement, assignment_type, requires_file_handling)
         else:
             # Generate code for each subproblem and combine the results
-            all_code = ""
+            all_responses = []
             for i, subproblem in enumerate(subproblems):
-                code = self._generate_single_code(subproblem, assignment_type, requires_file_handling)
-                all_code += f"\n\n# Subproblem {i+1}:\n{code}"
-            return all_code
+                response = self._generate_code_with_outputs(
+                    subproblem, 
+                    assignment_type, 
+                    requires_file_handling,
+                    subproblem_number=i+1
+                )
+                all_responses.append(response)
+            
+            combined_response = "\n\n".join(all_responses)
+            return combined_response
     
     def _extract_subproblems(self, problem_statement: str) -> List[str]:
         """Extract multiple subproblems from a problem statement.
@@ -152,107 +189,103 @@ class GeminiAPI:
             print(f"Error extracting subproblems: {str(e)}")
             return []
     
-    def _generate_single_code(self, problem_statement: str, assignment_type: str, requires_file_handling: bool = False) -> str:
-        """Generate code for a single problem statement.
+    def _generate_code_with_outputs(self, 
+                                   problem_statement: str, 
+                                   assignment_type: str, 
+                                   requires_file_handling: bool = False,
+                                   subproblem_number: Optional[int] = None) -> str:
+        """Generate code and simulated terminal outputs for a single problem statement.
         
         Args:
             problem_statement: The problem statement to solve
             assignment_type: The programming language to use
             requires_file_handling: Whether the problem requires file handling
+            subproblem_number: Optional number if this is part of multiple subproblems
             
         Returns:
-            Generated code solution
+            Generated response with code and simulated outputs in a specific format
         """
+        subproblem_prefix = f"Subproblem {subproblem_number}: " if subproblem_number is not None else ""
+        
         file_handling_instructions = ""
         if requires_file_handling:
             file_handling_instructions = """
             This problem requires file handling. Your solution should:
-            1. Read from a file named EXACTLY "data.txt"
+            1. Read from a file named EXACTLY "data.txt" 
             2. Process the data from the file according to the problem statement
             3. Output the results according to the problem statement
             
-            IMPORTANT: Your code must use the EXACT FILENAME "data.txt" to open and read the file. Do not use any path, just the filename directly.
-            
-            Example for Python:
-            ```python
-            # Open the file using the standardized name
-            file = open("data.txt", "r")
-            lines = file.readlines()
-            file.close()
-            ```
-            
-            Example for C++:
-            ```cpp
-            FILE* file = fopen("data.txt", "r");
-            // Read from file
-            fclose(file);
-            ```
-            
-            Add a FILE_REQUIRED marker at the beginning of your response, before the first code block:
-            FILE_REQUIRED
-            This program requires a file for testing. The file will be available as "data.txt".
-            FILE_END
-            
-            For programs requiring user inputs AFTER reading a file, include those in your test inputs.
+            In your terminal simulation:
+            - Assume the file exists in the same directory
+            - Show realistic outputs as if the file were read successfully
+            - Create realistic sample data that would be in the file based on the problem
             """
         
         prompt = f"""
-        Please generate a {assignment_type} program to solve the following problem statement: '{problem_statement}'.
-
-        The {assignment_type} program MUST meet these STRICT requirements:
-
-        1. **BEGINNER LEVEL CODE ONLY**: Write code as if for a first-year undergraduate student who is just learning to program.
-
-        2. **SIMPLICITY IS ESSENTIAL**:
-           - DO NOT use try/except blocks
-           - DO NOT use if __name__ == "__main__" structures
-           - For C++, DO NOT use <vector>, <algorithm>, or any STL containers
-           - Use only the most basic control structures (if/else, for loops, while loops)
-           - Avoid complex data structures - stick to arrays and simple variables
-
-        3. **Input Handling**: For Python, ask the user to input numbers separated by spaces like this:
-           ```python
-           input_str = input("Enter numbers separated by spaces: ")
-           numbers = [int(x) for x in input_str.split()]
-           ```
-           For C++, use simple cin for input.
-
-        4. **Problem Solving**: Break down the solution into simple steps with comments.
-
-        5. **NO ADVANCED TECHNIQUES**: Avoid lambdas, list comprehensions, or any feature that wouldn't be taught in the first semester.
-        {file_handling_instructions}
+        You are an automated programming assignment solution generator. Generate a complete solution for the following {assignment_type} programming assignment problem.
         
-        Furthermore, you need to generate two valid sets of test inputs that are logically consistent with the code. Present these test inputs in this specific format:
-        ```
-        TEST_START
-        <inputs for test case 1>
+        PROBLEM STATEMENT:
+        {subproblem_prefix}{problem_statement}
 
-        <inputs for test case 2>
-        TEST_END
-        ```
-        
-        NOTE: If the program requires file handling, test inputs might be empty or might only include inputs AFTER the file is read. The system handles file uploads separately.
-        There must be a newline between each test case.
-        
-        Your ENTIRE output MUST be formatted as follows, and contain NOTHING else: 
+        Your solution must include:
+
+        1. CODE SOLUTION: 
+           - Write beginner-level, simple {assignment_type} code that solves the problem
+           - Use straightforward approaches suitable for a first-year student
+           - Avoid advanced features, libraries, or complex techniques
+           - Include helpful comments explaining the logic
+           - USE ONLY ASCII CHARACTERS in your code and comments - no Unicode
+           {file_handling_instructions}
+
+        2. TERMINAL SIMULATION: 
+           - Create a realistic terminal/command line simulation showing the program running
+           - Show TWO complete test runs with different inputs and outputs
+           - Format exactly like a real terminal session with prompts, inputs, and outputs
+           - Make the terminal path be C:\\Users\\Student\\Desktop\\programs> python solution.py
+           - For each test case, show the command being run, all program outputs, user inputs, and final results
+           - USE ONLY ASCII CHARACTERS in your terminal output - no Unicode bullets or special symbols
+
+        Your response MUST follow this exact structure and format:
+
         ```{assignment_type}
-        [generated code]
+        [Your complete code solution here]
         ```
-        
+
         ```
         TEST_START
-        [generated test inputs]
-
-        [generated test inputs]
+        [First terminal simulation showing the program running with test inputs and outputs]
+        
+        [Second terminal simulation showing the program running with different test inputs and outputs]
         TEST_END
         ```
 
-        Ensure your response contains only the code and test inputs - no explanations or extra text.
-        Test inputs must be practical examples that effectively test your code's functionality.
+        Do not include any explanations or text outside of these code and test blocks.
         """
         
-        response = self.model.generate_content(prompt)
-        return response.text
+        try:
+            response = self.model.generate_content(prompt)
+            # Sanitize the response to replace any problematic Unicode characters
+            sanitized_response = self._sanitize_text(response.text)
+            return sanitized_response
+        except Exception as e:
+            print(f"Error generating code and outputs: {str(e)}")
+            fallback = f"""
+            ```{assignment_type}
+            # Error generating code
+            print("An error occurred during code generation")
+            ```
+            
+            ```
+            TEST_START
+            C:\\Users\\Student\\Desktop\\programs> python solution.py
+            An error occurred during code generation
+            
+            C:\\Users\\Student\\Desktop\\programs> python solution.py
+            An error occurred during code generation
+            TEST_END
+            ```
+            """
+            return fallback
     
     def generate_writeup(self, 
                         theory_points: List[str], 
@@ -280,6 +313,11 @@ class GeminiAPI:
             """
             
         theory = "\n".join([f"- {point}" for point in theory_points])
+        
+        # Extract just the code part from code_response (removing terminal outputs)
+        code_pattern = f"```{assignment_type}\\s+(.*?)\\s+```"
+        code_match = re.search(code_pattern, code_response, re.DOTALL)
+        code_extract = code_match.group(1) if code_match else code_response
         
         prompt = f"""
         Create a comprehensive write-up for this {assignment_type} Assignment using this format:
@@ -310,9 +348,15 @@ class GeminiAPI:
         5. Explain mathematical properties and formulas where applicable
         7. Cover optimization techniques and best practices
         
+        IMPORTANT: Use only ASCII characters in your explanations. Do not use Unicode bullet points or special symbols.
+        Use standard markdown formatting:
+        - Use asterisks (*) for bullet points
+        - Use hyphens (-) for lists
+        - Use 1. 2. 3. for numbered lists
+        
         ## Algorithm:
         Provide a step-by-step algorithm that matches the following program(s):
-        {code_response}
+        {code_extract}
         
         ## Conclusion:
         Summarize and write a conclusion on what was learned from implementing this assignment.
@@ -326,4 +370,6 @@ class GeminiAPI:
         """
         
         response = self.model.generate_content(prompt)
-        return response.text
+        # Sanitize the response to replace any problematic Unicode characters
+        sanitized_response = self._sanitize_text(response.text)
+        return sanitized_response

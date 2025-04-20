@@ -11,7 +11,7 @@ import json
 # Load local modules
 from pdf_parser import PDFParser
 from gemini_api import GeminiAPI
-from code_executor import CodeExecutor, TestCase
+from code_executor import CodeExecutor
 from markdown_generator import MarkdownGenerator, WriteupFormatter
 from markdown_to_pdf import MarkdownToPDF
 
@@ -231,7 +231,7 @@ def handle_manual_input():
         st.session_state.assignment_number = assignment_number
         st.session_state.assignment_type = assignment_type
         st.session_state.problem_statement = problem_statement
-        st.session_state.theory_points = [point.strip() for point in theory_input.split("\n") if point.strip()]
+        st.session_state.theory_points = "\n".join([point.strip() for point in theory_input.split("\n") if point.strip()])
         
         # Check if file handling is required
         if st.session_state.problem_statement:
@@ -401,7 +401,7 @@ def process_assignment(student_info, temp_dir):
         # Step 4: Generate code if we have a problem statement
         if st.session_state.problem_statement:
             status_text.text("Generating code solution using Gemini...")
-            code_response = gemini.generate_code(
+            code_response = gemini.generate_code_and_outputs(
                 st.session_state.problem_statement, 
                 st.session_state.assignment_type,
                 st.session_state.requires_file_handling
