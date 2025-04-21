@@ -190,10 +190,10 @@ class GeminiAPI:
             return []
     
     def _generate_code_with_outputs(self, 
-                                   problem_statement: str, 
-                                   assignment_type: str, 
-                                   requires_file_handling: bool = False,
-                                   subproblem_number: Optional[int] = None) -> str:
+                                problem_statement: str, 
+                                assignment_type: str, 
+                                requires_file_handling: bool = False,
+                                subproblem_number: Optional[int] = None) -> str:
         """Generate code and simulated terminal outputs for a single problem statement.
         
         Args:
@@ -227,44 +227,34 @@ class GeminiAPI:
         PROBLEM STATEMENT:
         {subproblem_prefix}{problem_statement}
 
-        Your solution must follow these EXTREMELY STRICT requirements for a TRUE BEGINNER-LEVEL solution:
+        Your solution must follow these requirements for a beginner-level solution:
 
-        1. **ABSOLUTE FIRST-YEAR CODE ONLY**: 
-           - Write code as if by a student who just learned programming a few weeks ago
-           - Use very simple variable names (a, b, arr, num1, num2, i, j, temp, etc.)
-           - Add basic comments that explain obvious things
-           - Include inefficiencies that a beginner would make
+        1. **BEGINNER LEVEL CODE ONLY**: 
+        - Write code as if by a student who just learned programming a few weeks ago
+        - Use simple variable names (a, b, arr, num1, num2, etc.)
+        - Include minimal comments - only explain complex logic, not obvious operations
+        - Keep the code simple but functional
 
-        2. **EXTREME SIMPLICITY IS MANDATORY**:
-           - For Python: NO imports except maybe 'math' if absolutely necessary
-           - For C++: ONLY use stdio.h/iostream, NO STL whatsoever - NO vector, NO algorithm, NO string, NO namespace std
-           - For C: Only use stdio.h and perhaps stdlib.h if absolutely necessary
-           - NO try/except or error handling of any kind
-           - NO functions when possible (or only 1-2 very simple ones)
-           - NO classes or object-oriented features
-           - NO if __name__ == "__main__" structures
+        2. **KEEP IT SIMPLE**:
+        - For Python: Only use basic imports if necessary (math, random)
+        - For C++: Only use basic headers
+        - For C: Only use stdio.h and stdlib.h if needed
+        - Use simple error handling, if any
+        - Avoid complex data structures and algorithms
 
-        3. **IMPLEMENT EVERYTHING FROM SCRATCH**:
-           - Write sorting algorithms manually (bubble or selection sort ONLY)
-           - Implement all string manipulation manually with loops and arrays
-           - For C++, use C-style code (arrays, printf/scanf) rather than C++ features
-           - Use basic loops and conditionals for everything
+        3. **BASIC IMPLEMENTATION**:
+        - Use basic algorithms like bubble or selection sort
+        - Keep string manipulation straightforward 
+        - No advanced language features
+        {file_handling_instructions}
 
-        4. **ADD BEGINNER CHARACTERISTICS**:
-           - Include a few inefficient approaches (like nested loops where unnecessary)
-           - Add slightly redundant code
-           - Use simple algorithms even when better ones exist
-           - Include a few extra variables
-           - Write overly detailed comments on simple operations
-           {file_handling_instructions}
-
-        5. **TERMINAL SIMULATION**: 
-           - Create a realistic terminal/command line simulation showing the program running
-           - Show TWO complete test runs with different inputs and outputs
-           - Format exactly like a real terminal session with prompts, inputs, and outputs
-           - Make the terminal path be C:\\Users\\Student\\Desktop\\programs> python solution.py
-           - For each test case, show the command being run, all program outputs, user inputs, and final results
-           - USE ONLY ASCII CHARACTERS in your terminal output - no Unicode bullets or special symbols
+        4. **TERMINAL SIMULATION**: 
+        - Create a realistic terminal/command line simulation showing the program running
+        - Show TWO complete test runs with different inputs and outputs
+        - Format exactly like a real terminal session with prompts, inputs, and outputs
+        - Make the terminal path be C:\\Users\\Student\\Desktop\\programs> python solution.py
+        - For each test case, show the command being run, all program outputs, user inputs, and final results
+        - USE ONLY ASCII CHARACTERS in your terminal output - no Unicode bullets or special symbols
 
         Your response MUST follow this exact structure and format:
 
@@ -307,7 +297,6 @@ class GeminiAPI:
             ```
             """
             return fallback
-    
     def generate_writeup(self, 
                         theory_points: List[str], 
                         code_response: str, 
