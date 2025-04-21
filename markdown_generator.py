@@ -6,59 +6,17 @@ class MarkdownGenerator:
         self.student_name = student_name
         self.student_prn = student_prn
         self.student_batch = student_batch
-        self.problem_statement = self._condense_problem_statement(problem_statement)
+        
+        # Get a summarized version of the problem statement if it's too long
+        if problem_statement and len(problem_statement.split()) > 100:
+            from gemini_api import GeminiAPI
+            gemini = GeminiAPI()
+            self.problem_statement = gemini.summarize_problem_statement(problem_statement)
+        else:
+            self.problem_statement = problem_statement
+            
         self.code = code
         self.outputs = outputs
-    
-    def _condense_problem_statement(self, problem_statement):
-        """Create a more concise version of the problem statement.
-        
-        Args:
-            problem_statement: The original problem statement
-            
-        Returns:
-            A condensed version of the problem statement
-        """
-        # If problem statement is already short, return as is
-        if len(problem_statement.split()) < 100:
-            return problem_statement
-            
-        import google.generativeai as genai
-        import os
-        from dotenv import load_dotenv
-        
-        try:
-            load_dotenv()
-            api_key = os.getenv("GEMINI_API_KEY")
-            if not api_key:
-                return problem_statement
-                
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            
-            prompt = f"""
-            Condense the following programming assignment problem statement into a concise version.
-            Keep all essential requirements, constraints, and input/output specifications.
-            Remove unnecessary explanations, redundancies, and verbose descriptions.
-            Focus on what the program needs to do, not how to do it.
-            The result should be 30-50% shorter than the original.
-            
-            PROBLEM STATEMENT:
-            {problem_statement}
-            """
-            
-            response = model.generate_content(prompt)
-            condensed = response.text.strip()
-            
-            # If the condensed version is too short or empty, return original
-            if len(condensed) < 30 or len(condensed) / len(problem_statement) < 0.15:
-                return problem_statement
-                
-            return condensed
-            
-        except Exception as e:
-            print(f"Error condensing problem statement: {str(e)}")
-            return problem_statement
     
     def generate_upload_markdown(self):
         """Generate markdown for the upload PDF.
@@ -133,4 +91,35 @@ class MarkdownGenerator:
         markdown = self.generate_upload_markdown()
         with open(filename, "w", encoding="utf-8") as f:  # Add encoding parameter
             f.write(markdown)
+        return filename
+
+
+class WriteupFormatter:
+    def __init__(self, writeup_content):
+        """Initialize with the writeup content from Gemini API."""
+        self.writeup_content = writeup_content
+    
+    def format_content(self):
+        """Format the writeup content ensuring proper markdown structure."""
+        text = self.writeup_content
+        start_marker = "```markdown"
+        end_marker = "```"
+        # Find the index of the first occurrence
+        start_index = text.find(start_marker)
+        if start_index == -1:
+            return text  # No marker found
+        
+        # Find the last occurrence after our starting point
+        end_index = text.rfind(end_marker)
+        if end_index == -1:
+            return text  # No ending marker found
+        
+        # Extract the content between markers
+        return text[start_index+11:end_index]
+    
+    def save_writeup_to_file(self, filename):
+        """Save the formatted writeup to a file."""
+        content = self.format_content()
+        with open(filename, "w", encoding="utf-8") as f:  # Add encoding parameter
+            f.write(content)
         return filename

@@ -75,6 +75,42 @@ class GeminiAPI:
             print(f"Error checking file handling: {str(e)}")
             return False
     
+    def summarize_problem_statement(self, problem_statement: str) -> str:
+        """Summarize a problem statement to make it more concise while preserving key requirements.
+        
+        Args:
+            problem_statement: The original problem statement to summarize
+            
+        Returns:
+            A more concise version of the problem statement
+        """
+        if not problem_statement or len(problem_statement) < 200:
+            return problem_statement
+            
+        prompt = f"""
+        Summarize this programming assignment problem statement to make it more concise.
+        Preserve ALL essential requirements, input/output specifications, and constraints.
+        Focus on what the program needs to do, remove unnecessary explanations and verbose descriptions.
+        The summary should be 40-60% of the original length.
+        
+        PROBLEM STATEMENT:
+        {problem_statement}
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            summarized = response.text.strip()
+            
+            # Verify the summary isn't too short or empty
+            if not summarized or len(summarized) < 50 or len(summarized) / len(problem_statement) < 0.2:
+                return problem_statement
+                
+            return summarized
+            
+        except Exception as e:
+            print(f"Error summarizing problem statement: {str(e)}")
+            return problem_statement
+
     def validate_programming_assignment(self, content: str) -> bool:
         """Validate if the content is a programming assignment.
         
