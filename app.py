@@ -83,7 +83,7 @@ def render_header():
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         st.markdown("""
                     <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                        <a href="" target="_blank">
+                        <a href="" target="https://youtu.be/YMB0VlHbGEQ">
                             <button style="background-color: #f63366; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
                                 How to use?
                             </button>
@@ -485,13 +485,18 @@ def process_assignment(student_info, temp_dir):
         with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(upload_pdf_content)
  
-        # Convert markdown to PDF
-        md_to_pdf = MarkdownToPDF()
-        pdf_output_path = os.path.join(temp_dir, filename)
         
-        md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
-        with open(pdf_output_path, "rb") as pdf_file:
-            pdf_content = pdf_file.read()
+        # Read the markdown file content
+        with open(markdown_path, "rb") as md_file:
+            markdown_content = md_file.read()
+
+        # # Convert markdown to PDF
+        # md_to_pdf = MarkdownToPDF()
+        # pdf_output_path = os.path.join(temp_dir, filename)
+        
+        # md_to_pdf.save_pdf(upload_pdf_content, pdf_output_path)
+        # with open(pdf_output_path, "rb") as pdf_file:
+        #     pdf_content = pdf_file.read()
         
         # Format the writeup
         formatted_writeup = ""
@@ -505,10 +510,9 @@ def process_assignment(student_info, temp_dir):
         # Save results to session state
         st.session_state.processing_complete = True
         st.session_state.formatted_writeup = formatted_writeup
-        st.session_state.pdf_content = pdf_content
-        st.session_state.upload_pdf_content = upload_pdf_content
-        st.session_state.filename = filename
-        
+        st.session_state.markdown_content = markdown_content  # Change from pdf_content
+        st.session_state.filename = f"{student_info['prn']}_{student_info['name'].split(' ')[0]}_{student_info['batch']}.md"
+
         return True
         
     except Exception as e:
@@ -523,7 +527,7 @@ def display_results():
         return
     
     # Create tabs for results
-    tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code PDF"])
+    tab1, tab2 = st.tabs(["Theory Writeup", "Upload Code Markdown"])
     
     # Display content in tabs based on session state
     with tab1:
@@ -542,29 +546,39 @@ def display_results():
             st.info("No theory writeup was generated for this assignment.")
     
     with tab2:
-        # Download button for PDF
+        # Download button for Markdown
         st.download_button(
-            label="Download PDF",
-            data=st.session_state.pdf_content,
+            label="Download Markdown",
+            data=st.session_state.markdown_content,
             file_name=st.session_state.filename,
-            mime="application/pdf"
+            mime="text/markdown"
         )
         # Display the markdown content
-        st.markdown(st.session_state.upload_pdf_content)
+        st.markdown(st.session_state.markdown_content.decode('utf-8'), unsafe_allow_html=False)
 
 def render_footer():
-    """Render the application footer."""
+    """Render the application footer with QR code dialog."""
     st.markdown("---")
     st.markdown("© 2025 Assignment Automation Tool | Made by [Neil](https://www.linkedin.com/in/neil-lunavat) with ❤️")
+    
+    @st.dialog("Support the Project")
+    def show_qr_code():
+        st.image("./assets/upi_qr.png", caption="Scan to contribute")
+        st.markdown("Thank you for supporting this project! 🙏")
+    
+    # Create a container with right-aligned button
     st.markdown("""
     <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-        <a href="https://www.buymeacoffee.com/neil3196" target="_blank">
-            <button style="background-color: #7765E3; color: #000000; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-weight: bold;">
-                Buy me a Predator 🐺
-            </button>
-        </a>
+        <div id="support-button-container"></div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Place the button in the right-aligned container
+    button_container = st.container()
+    with button_container:
+        if st.button("Buy me a Predator 🐺", key="support_button", 
+                     type="primary", use_container_width=False):
+            show_qr_code()
 
 def main():
     """Main function to run the Streamlit application."""

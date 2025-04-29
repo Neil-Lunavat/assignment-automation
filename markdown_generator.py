@@ -1,3 +1,5 @@
+from gemini_api import GeminiAPI
+
 class MarkdownGenerator:
     def __init__(self, assignment_number, assignment_type, student_name, student_prn, student_batch, problem_statement, code, outputs):
         """Initialize with all necessary content for generating markdown."""
@@ -9,7 +11,6 @@ class MarkdownGenerator:
         
         # Get a summarized version of the problem statement if it's too long
         if problem_statement and len(problem_statement.split()) > 100:
-            from gemini_api import GeminiAPI
             gemini = GeminiAPI()
             self.problem_statement = gemini.summarize_problem_statement(problem_statement)
         else:
