@@ -4,6 +4,7 @@ import json
 import google.generativeai as genai
 from dotenv import load_dotenv
 from typing import List, Dict, Any, Optional, Union, Tuple
+import config
 
 load_dotenv()
 
@@ -14,10 +15,10 @@ class GeminiAPI:
         """Initialize the Gemini API with API key from environment."""
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY is not set in the environment")
+            raise ValueError(config.ERROR_MESSAGES["no_api_key"])
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-flash-preview-04-17')
+        self.model = genai.GenerativeModel(config.GEMINI_MODEL)
         
     def _sanitize_text(self, text: str) -> str:
         """Replace problematic Unicode characters with ASCII equivalents.
@@ -47,6 +48,64 @@ class GeminiAPI:
             text = text.replace(char, replacement)
         
         return text
+    
+    def _check_for_suspicious_content(self, content: str) -> Dict[str, Any]:
+        """Check for suspicious content that might indicate prompt injection or malicious code.
+        
+        Args:
+            content: The content to check
+            
+        Returns:
+            Dictionary with security check results
+        """
+        content_lower = content.lower()
+        
+        # Check for suspicious system commands
+        suspicious_commands_found = []
+        for command in config.SUSPICIOUS_COMMANDS:
+            if command in content_lower:
+                suspicious_commands_found.append(command)
+        
+        # Check for suspicious imports or function calls
+        suspicious_imports_found = []
+        for import_name in config.SUSPICIOUS_IMPORTS:
+            if import_name in content_lower:
+                suspicious_imports_found.append(import_name)
+        
+        # Check for potential prompt injection patterns
+        injection_patterns = [
+            r"ignore.*previous.*instructions",
+            r"system.*prompt",
+            r"bypass.*security",
+            r"admin.*access",
+            r"root.*privileges",
+            r"delete.*all.*files",
+            r"format.*disk",
+            r"shutdown.*computer"
+        ]
+        
+        injection_attempts = []
+        for pattern in injection_patterns:
+            if re.search(pattern, content_lower):
+                injection_attempts.append(pattern)
+        
+        # Calculate security score (0-100, higher is more suspicious)
+        security_score = 0
+        if suspicious_commands_found:
+            security_score += 30
+        if suspicious_imports_found:
+            security_score += 25
+        if injection_attempts:
+            security_score += 45
+        
+        return {
+            "is_safe": security_score < 50,
+            "security_score": security_score,
+            "suspicious_commands": suspicious_commands_found,
+            "suspicious_imports": suspicious_imports_found,
+            "injection_attempts": injection_attempts,
+            "warnings": []
+        }
     
     def check_file_handling_required(self, problem_statement: str) -> bool:
         """Check if the problem requires file handling.
@@ -111,15 +170,34 @@ class GeminiAPI:
             print(f"Error summarizing problem statement: {str(e)}")
             return problem_statement
 
-    def validate_programming_assignment(self, content: str) -> bool:
-        """Validate if the content is a programming assignment.
+    def validate_programming_assignment(self, content: str) -> Dict[str, Any]:
+        """Validate if the content is a programming assignment and check for security issues.
         
         Args:
             content: The content to validate
             
         Returns:
-            Boolean indicating if the content is a valid programming assignment
+            Dictionary with validation results including security checks
         """
+        # First, perform security checks
+        security_check = self._check_for_suspicious_content(content)
+        
+        # Basic validation checks
+        if not content or len(content.strip()) < config.MIN_PROBLEM_STATEMENT_LENGTH:
+            return {
+                "is_valid": False,
+                "reason": "Content too short or empty",
+                "security_check": security_check
+            }
+        
+        if len(content) > config.MAX_PROBLEM_STATEMENT_LENGTH:
+            return {
+                "is_valid": False,
+                "reason": "Content too long",
+                "security_check": security_check
+            }
+        
+        # Check if it's a programming assignment using Gemini
         prompt = f"""
         Determine if the following text describes a programming assignment or problem statement 
         that can be solved with code (in any programming language).
@@ -133,10 +211,22 @@ class GeminiAPI:
         try:
             response = self.model.generate_content(prompt)
             result = response.text.strip().lower()
-            return "yes" in result
+            is_programming_assignment = "yes" in result
+            
+            return {
+                "is_valid": is_programming_assignment and security_check["is_safe"],
+                "is_programming_assignment": is_programming_assignment,
+                "security_check": security_check,
+                "reason": "Valid programming assignment" if is_programming_assignment and security_check["is_safe"] else "Invalid or potentially unsafe content"
+            }
+            
         except Exception as e:
             print(f"Error validating assignment: {str(e)}")
-            return False
+            return {
+                "is_valid": False,
+                "reason": f"Validation error: {str(e)}",
+                "security_check": security_check
+            }
     
     def generate_code_and_outputs(self, problem_statement: str, assignment_type: str, requires_file_handling: bool = False) -> str:
         """Generate code solution and terminal outputs based on the problem statement.
